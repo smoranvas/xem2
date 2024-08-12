@@ -31,16 +31,16 @@ const int    theta_hi       =  100;
 const int    theta_lo       = -100;
 const double Einitial       = 10.544;
 const double Mp             = 0.938;
-const float  density_LT     = 0.16743;         //Has g/cm3 units 
-const double length_LT      = 10.0;            //Has cm units  
+const float  density_LT     = 0.16743;       //Has g/cm3 units 
+const double length_LT      = 10.0;          //Has cm units  
 const double sim_charge_ST  = 1.;            //Has uC units 
 const double sim_charge_LT  = 1.;            //Has uC units 
 const double AM_LT          = 2.0;
 const int    N_BINS         = 80;
 const double TOLERANCE      = 1e-8;
-const bool   F2_option      = false; 
-const char* var_dep         = "delta";
-const char* trigger_select  = "ELREAL"; // ELREAL or anything else to include 3/4 triggers (not reason to include those in physics analysis)
+const bool   F2_option      = false;     //it should be false always, calculating F2 event by event is not the right approach
+const char* var_dep         = "delta";      // delta or xb
+const char* trigger_select  = "NOELREAL";  // ELREAL or anything else to include 3/4 triggers (not reason to include those in physics analysis)
 
 struct Variables {
   // Variables for SIMULATION
@@ -93,6 +93,7 @@ TGraph2DErrors* createGraph2D( const std::vector<double>& V2, const std::vector<
 void printHistogramContents(TH1F *hist);
 void PlotWithRatio(TCanvas *&canvas, TH1F *Data_ST, TH1F *Data_LT, TH1F *MC_ST, TH1F *MC_LT, TH1F *MC_ST_UNWeigthed,TH1F *MC_LT_UNWeigthed , TString out_name);
 double deltaToX(double delta , double p_spec , double Einitial , double angle);
+double XTodelta(double X_Bjorken, double p_spec, double Einitial, double angle);
 void convertHistogramToGraph(TH1F* h_delta, TGraphErrors*& graph,  double p_spec , double Einitial , double angle , TString out_name);
 void printGraphContents(TGraphErrors *graph);
 void writeHistogramToTextFile(TH1F* hist, double p_spec , double Einitial , double angle, const char* filename) ;
@@ -170,13 +171,40 @@ void cross_Sections_updated_workingProcess (const char* target_in = "C12", const
   if (delta_corr_opt =="ON"){delta_corr_ON       = true ; }       else {delta_corr_ON       = false;}
 
   TString spectrometer_lowercase;
-  if ( spectrometer=="HMS") {spectrometer_lowercase = "hms";}
+  if ( spectrometer=="HMS" || spectrometer=="test") {spectrometer_lowercase = "hms";}
   else if ( spectrometer=="SHMS") {spectrometer_lowercase = "shms";}
 
   TString f_st_mc_st , f_lt_mc_st  ,mc_file_lt_st , mc_file_st_st  ; 
   double angle , p_spec , AM_ST;
   int delta_hi , delta_lo;
   double density_ST, length_ST  ;
+
+  if  ( target_input=="C12" && angle_input=="20" && spectrometer=="test"){
+
+    mc_file_lt_st = "/work/smoran/xem2/cross_sections/EXTERNALS_tables/xem2_emc_rc_d2cryo22_hms.out";
+    mc_file_st_st = "/work/smoran/xem2/cross_sections/EXTERNALS_tables/xem2_emc_rc_12carbon22_hms.out";
+    angle         = 20.0;
+    AM_ST         = 12.0;
+    density_ST    = 2.00;
+    length_ST     = 0.287;
+    delta_hi      = 20;
+    delta_lo      = -20;
+    f_st_mc_st    = "/work/smoran/xem2/sim/test_5p87_carbon.root";
+    f_lt_mc_st    = "/work/smoran/xem2/sim/test_5p87_deuterium.root";
+
+    p_spec  = 5.878;
+
+    run_data_ST = {
+      {5828 , 142189 , 1 , 0.9969 , 1 , 0.999881 , 2}
+    };
+    run_data_LT = {
+      {4780 , 90719.6 , 1 , 0.9972 , 1.00004 , 0.999827 , 2}
+    };
+    run_data_LT_Dummy = {
+      {4772 , 79655.2 , 1 , 0.9976 , 1.00004 , 0.999886 , 2}
+    };
+
+}
 
   if (  target_input=="C12" && angle_input=="35" && spectrometer=="HMS" ){
 
@@ -522,6 +550,8 @@ else if ( momentum_spec_input=="2p72"   ){
 	  {6396 , 122199 , 1 , 0.9977 , 1.00001 , 0.999975 , 2},
 	  //{6397 , 46543.2 , 1 , 0.9961 , 1 , 0.99995 , 2},//not in tape library
 	  //{6398 , 50379.5 , 1 , 0.9963 , 0.999974 , 0.999817 , 1}//not in tape library
+	  
+
 };
 
 	run_data_LT = {
@@ -548,7 +578,8 @@ else if ( momentum_spec_input=="2p72"   ){
 else if ( momentum_spec_input=="2p40"   ){
 	p_spec  = 2.40; 
 	run_data_ST = {
-
+	  /*
+//electrons
 	  {5409 , 164352 , 1 , 0.9972 , 1.00001 , 0.999911 , 2},
 	  {5410 , 145578 , 1 , 0.9976 , 1.00003 , 0.999925 , 2},
 	  {5411 , 67022.9 , 1 , 0.9976 , 0.999975 , 0.999911 , 2},
@@ -557,11 +588,17 @@ else if ( momentum_spec_input=="2p40"   ){
 	  {6463 , 125817 , 1 , 0.9972 , 1 , 0.999926 , 2},
 	  {6464 , 108511 , 1 , 0.9974 , 1.00001 , 0.999958 , 2},
 	  {6465 , 62894.6 , 1 , 0.9972 , 0.999954 , 0.999726 , 1}
-
+	  */
+	  {5028 , 19333 , 1 , 0.9875 , 1 , 1 , 3},                              // +2.40 C12
+	  {6149 , 39070.6 , 1 , 1 , 0.999967 , 1 , 3},            // +2.40 C12
 };
 	run_data_LT = {
+	  /*
+//electrons
 	  {5426 , 129662 , 1 , 0.9965 , 1.00001 , 0.999856 , 2},
 	  {5427 , 82057 , 1 , 0.9965 , 1.00003 , 0.999858 , 2}
+	  */
+	  {5024 , 30061.1 , 1 , 0.9946 , 0.999912 , 1 , 3}            // +2.40 LD2
 };
 	run_data_LT_Dummy = {
 	  {5422 , 90651.4 , 1 , 0.9966 , 1.00001 , 0.99994 , 2},
@@ -573,17 +610,27 @@ else if ( momentum_spec_input=="2p40"   ){
 	
 else if ( momentum_spec_input=="2p11"   ){
 	p_spec  = 2.11; 
-	run_data_ST = {
+	run_data_ST = {/*
+//electrons
 	  {5436 , 4143.43 , 2 , 0.9987 , 1.0094 , 0.999899 , 1},
 	  {5437 , 34516.1 , 1 , 0.9968 , 0.99996 , 0.998725 , 1},
 	  {5439 , 207715 , 1 , 0.997 , 1.00007 , 0.999864 , 2},
 	  {6477 , 108650 , 1 , 0.9971 , 0.99998 , 0.999887 , 2},
 	  {6478 , 42883.4 , 1 , 0.9977 , 1.00003 , 0.99986 , 2},
 	  {6479 , 21989.5 , 1 , 0.9979 , 1.00026 , 0.999392 , 1}
+		       */
 
+	  {5032 , 22093.9 , 1 , 0.993 , 0.999967 , 0.999973 , 3},   // +2.11 C12
+	  {5033 , 12005.9 , 1 , 1 , 1 , 0.99991 , 3},           // +2.11 C12
+	  {5034 , 18670.1 , 1 , 0.9884 , 1 , 0.999963 , 3},           // +2.11 C12
+	  {6156 , 67147.7 , 1 , 0.9923 , 0.999979 , 1 , 3}            // +2.11 C12
 };
 	run_data_LT = {
+	  /*
+//electrons
 	  {5428 , 93390.8 , 1 , 0.9962 , 1.00007 , 0.999628 , 2}
+	  */
+	  {5045 , 38978.4 , 1 , 0.9972 , 1 , 0.999964 , 3}               // +2.11 LD2
 };
 	run_data_LT_Dummy = {
 	  {5430 , 62124.8 , 1 , 0.9966 , 0.999982 , 0.999925 , 2},
@@ -595,13 +642,21 @@ else if ( momentum_spec_input=="2p11"   ){
 else if ( momentum_spec_input=="1p85"   ){
 	p_spec  = 1.85; 
 	run_data_ST = {
+	  /*
+//electrons
 	  {5440 , 114781 , 1 , 0.9966 , 1.00004 , 0.999701 , 2},
 	  {5441 , 30951.7 , 2 , 0.9968 , 1.00732 , 0.999723 , 1},
 	  {6487 , 12618.7 , 2 , 0.9973 , 0.997547 , 0.998848 , 1}
-
+	  */
+	  {5056 , 35350.3 , 1 , 0.9886 , 0.999959 , 1 , 3},           // +1.86 C12
+	  {6173 , 30522.6 , 1 , 0.9956 , 1 , 1 , 3}            // +1.85 C12
 };
 	run_data_LT = {
+	  /*
+//electrons
 	  {5449 , 50290.8 , 1 , 0.9965 , 0.999799 , 0.998578 , 2}
+	  */
+	  {5046 , 41920.7 , 1 , 0.9921 , 0.999964 , 0.999988 , 3}  // +1.86 LD2
 };
 	run_data_LT_Dummy = {
 	  {5446 , 32965.1 , 1 , 0.997 , 0.999951 , 0.999767 , 2},
@@ -612,17 +667,24 @@ else if ( momentum_spec_input=="1p85"   ){
 else if ( momentum_spec_input=="1p63"   ){
 	p_spec  = 1.63; 
 	run_data_ST = {
-
+	  /*
+electrons
 	  {5460 , 17600.2 , 5 , 0.9963 , 1.00311 , 0.998581 , 1},
 	  {5461 , 68832.2 , 1 , 0.9968 , 0.999615 , 0.999147 , 2},
 	  {6504 , 15811.7 , 1 , 0.9978 , 0.527468 , 0.470504 , 1}, 
 	  {6505 , 66480.1 , 1 , 0.9976 , 1.0001 , 0.999489 , 2}
-
-
+	  */
+	  {5058 , 26703.3 , 1 , 0.9973 , 0.999902 , 1 , 3},           // +1.63 C12
+	  {6196 , 20348.8 , 1 , 0.998 , 0.99998 , 1 , 3}            // +1.63  C12
 };
 	run_data_LT = {
+	  /*
+//electrons
 	  {5450 , 45971.4 , 2 , 0.9958 , 1 , 0.999794 , 2},
 	  {5452 , 18197 , 17 , 0.9958 , 1.03201 , 0.998074 , 1}
+	  */
+	  {5072 , 22602.1 , 1 , 0.9942 , 0.999973 , 0.999946 , 3},    // +1.63 LD2
+	  {5073 , 51831.6 , 1 , 0.9958 , 0.999895 , 0.9999 , 3}        // +1.63 LD2
 };
 	run_data_LT_Dummy = {
 	  {5455 , 17338.3 , 1 , 0.9968 , 1.00008 , 0.999652 , 2},
@@ -634,16 +696,23 @@ else if ( momentum_spec_input=="1p63"   ){
 else if ( momentum_spec_input=="1p44"   ){
 	p_spec  = 1.44; 
 	run_data_ST = {
-
+          /*                                                                                                                                                                                                                                  
+//electrons   
 	  {5463 , 44335.9 , 1 , 0.9964 , 1.00018 , 0.999272 , 2},
 	  {5465 , 20484.9 , 9 , 0.9957 , 1.00751 , 0.998634 , 1},
 	  {6506 , 55768.9 , 1 , 0.9974 , 1.00033 , 0.999283 , 2},
 	  {6507 , 19563.6 , 1 , 0.9977 , 0.346465 , 0.257273, 1} 
-
+	  */
+	  {5085 , 84673.2 , 1 , 0.996 , 0.999934 , 0.999919 , 3},    // +1.44 C12
+	  {6213 , 41322.9 , 1 , 0.9965 , 0.99997 , 0.999989 , 3}     // +1.44 C12
 };
 	run_data_LT = {
+          /*                                                                                                                                                                                                                                 
+//electrons  
 	  {5481 , 53019.8 , 3 , 0.9974 , 0.992916 , 0.998713, 2},
 	  {5482 , 26267.9 , 33 , 0.997 , 1.03838 , 0.997874, 1}
+	  */
+	  {5074 , 87653 , 1 , 0.9956 , 0.999859 , 0.999884 , 3}       // +1.44 LD2
 };
 	run_data_LT_Dummy = {
 	  {5477 , 9411.92 , 1 , 0.9973 , 1.00025 , 0.999582 , 2},
@@ -655,15 +724,25 @@ else if ( momentum_spec_input=="1p44"   ){
 else if ( momentum_spec_input=="1p26"   ){
 	p_spec  = 1.26; 
 	run_data_ST = {
+	  /*
+//electrons
 	  {5496 , 20156.6 , 17 , 0.9978 , 1.01497 , 0.997844 , 1},
 	  {5497 , 52393.5 , 2 , 0.9976 , 1.00273 , 0.999863 , 2},
 	  {6522 , 17517 , 17 , 0.9966 , 1.01453 , 0.99748, 1},
 	  {6523 , 6162.97 , 1 , 0.9974 , 0.986569 , 0.985437 , 2},
 	  {6524 , 39881.2 , 1 , 0.9971 , 0.999893 , 0.99882 , 2}
+	  */
+
+	  {5088 , 47313 , 1 , 0.9961 , 0.999874 , 0.999937 , 3},     // +1.26 C12
+	  {6222 , 53152.7 , 1 , 0.9965 , 0.999931 , 0.999965 , 3}  // +1.26 C12
 };
 	run_data_LT = {
+	  /*
+//electrons
 	  {5483 , 43465.1 , 5 , 0.9966 , 1.00719 , 0.998821 , 2},
 	  {5484 , 23253.7 , 65 , 0.9954 , 1.07585 , 0.99979 , 1}
+	  */
+	  {5097 , 76009.8 , 2 , 0.9955 , 0.999481 , 0.999998 , 3}     // +1.26 LD2
 };
 	run_data_LT_Dummy = {
 	  {5487 , 17181.7 , 1 , 0.9971 , 1.00009 , 0.9994 , 2},
@@ -812,6 +891,10 @@ else if      ( momentum_spec_input=="5p42"   ){
 if      ( momentum_spec_input=="1p95"   ){
 	p_spec  = 1.95; 
 	run_data_ST = {
+	  {4592 , 32580.8 , 1 , 0.9965 , 0.999865 , 0.999833 , 3} // +1.95 C12
+
+	  /*
+//electrons
 	  {4424 , 15799 , 1 , 0.9963 , 0.999451 , 0.997928 , 2},
 	  {4426 , 43625.5 , 9 , 0.9964 , 1.00859 , 0.999534 , 1},
 	  {4429 , 63653.6 , 1 , 0.9965 , 0.999858 , 0.998771 , 2},
@@ -833,8 +916,13 @@ if      ( momentum_spec_input=="1p95"   ){
 	  {4450 , 967.946 , 1 , 0.9963 , 0.982229 , 0.978693 , 2},
 	  {4465 , 5975.45 , 2 , 0.9976 , 0.998538 , 0.99952 , 2},
 	  {4466 , 29939.5 , 2 , 0.9967 , 1.00313 , 0.998648 , 2}
+	  */
 };
 	run_data_LT = {
+
+	  {4597 , 34774.8 , 1 , 0.9958 , 0.998857 , 0.999398 , 3} //  // +1.95 LD2
+	  /*
+//electrons
 	  //{4421 , 2190.83 , 1 , 0.9945 , 0.130979 , 0.120518}, //too short, dont use it 
 	  //{4422 , 3754.71 , 17 , 0.9972 , 1.07268 , 0.989397},//also too short
 	  {4423 , 16760.7 , 5 , 0.9961 , 0.983526 , 0.999871 , 2},
@@ -846,7 +934,7 @@ if      ( momentum_spec_input=="1p95"   ){
 	  {4454 , 17757.3 , 3 , 0.9966 , 0.998158 , 0.997951 , 2},
 	  {4457 , 13634.2 , 33 , 0.9965 , 1.03259 , 0.999796 , 1},
 	  {4468 , 37975.4 , 9 , 0.9962 , 1.00091 , 0.999902 , 2}
-
+	  */
 };
 	run_data_LT_Dummy = {
 	  {4460 , 15859.1 , 5 , 0.9965 , 0.998509 , 0.996698 , 1},
@@ -858,8 +946,13 @@ if      ( momentum_spec_input=="1p95"   ){
 else if      ( momentum_spec_input=="2p21"   ){
 	p_spec  = 2.21; 
 	run_data_ST = {
+	  {4585 , 37936.6 , 1 , 0.9975 , 0.999956 , 0.999855 , 3}
+	  /*
+//electrons
 	  {4554 , 42701.1 , 2 , 0.9972 , 0.994233 , 0.999858 , 2},
 	  {4555 , 25865.1 , 9 , 0.997 , 1.00255 , 0.999113 , 1}
+
+	  */
 };
 	run_data_LT = {{4560 , 39675.7 , 5 , 0.9969 , 1.00085 , 0.998958 , 2}};
 	run_data_LT_Dummy = {{4558 , 10216.3 , 1 , 0.9973 , 0.999866 , 0.999409 , 2}};
@@ -868,21 +961,42 @@ else if      ( momentum_spec_input=="2p21"   ){
 else if      ( momentum_spec_input=="2p52"   ){
 	p_spec  = 2.52; 
 	run_data_ST = {
+	  {4572 , 49173.1 , 1 , 0.9959 , 0.999865 , 0.999977 , 3} // +2.52 C12
+	  /*
+//electrons
 	  {4552 , 16200 , 5 , 0.997 , 1.00293 , 0.99779 , 1},
 	  {4553 , 30643.7 , 1 , 0.9972 , 0.999335 , 0.998741 , 2}
+	  */
 };
-	run_data_LT = {{4547 , 33211.8 , 2 , 0.9972 , 0.997036 , 0.997302 , 2}};
+	run_data_LT = {
+	  /*
+//electrons
+{4547 , 33211.8 , 2 , 0.9972 , 0.997036 , 0.997302 , 2}
+	  */
+	  {4577 , 23139.8 , 1 , 0.9963 , 1 , 0.999762 , 3}               // +2.52 LD2
+};
 	run_data_LT_Dummy = {{4549 , 21197.5 , 1 , 0.9973 , 1.00006 , 0.999638 , 2}};
 	}	
 	
 else if      ( momentum_spec_input=="2p86"   ){
 	p_spec  = 2.86; 
 	run_data_ST = {
+	  /*
+//electrons
 	  {4539 , 23316.9 , 1 , 0.9975 , 0.999855 , 0.999652 , 2},
 	  {4540 , 44543.6 , 1 , 0.9975 , 1.00021 , 0.999615 , 2},
 	  {4541 , 14501.3 , 1 , 0.9971 , 0.994248 , 0.992931 , 1}
+	  */
+	  {4568 , 35918.7 , 1 , 0.9883 , 0.999869 , 0.99995 , 3}    // +2.86 C12
 };
-	run_data_LT = {{4546 , 34184.6 , 1 , 0.9972 , 0.999751 , 0.998351 , 2}};
+	run_data_LT = {
+	  
+//electrons
+{4546 , 34184.6 , 1 , 0.9972 , 0.999751 , 0.998351 , 2}
+	  
+
+
+};
 	run_data_LT_Dummy = {{4544 , 20590.7 , 1 , 0.9972 , 1.00046 , 0.999785 , 2}};
 	}	
 else if      ( momentum_spec_input=="3p25"   ){
@@ -1164,83 +1278,154 @@ else if      ( momentum_spec_input=="5p42"   ){
     else if ( momentum_spec_input=="3p40" ){
       p_spec  = 3.40;
       run_data_ST = { 
+	{4600 , 33244.5 , 1 , 0.9885 , 1 , 0.999852 , 3},               // +3.40 C12
+	{6008 , 33806.7 , 1 , 0.9903 , 0.999724 , 0.999895 , 3}         // +3.40 C12
+	/*
+//electrons
 	{4925 , 23957.9 , 1 , 0.9973 , 0.998078 , 0.996092 , 2},
 	{5910 , 35241.7 , 2 , 0.9969 , 0.992951 , 0.999385 , 2},
 	{6569 , 8596.91 , 1 , 0.9972 , 0.999666 , 0.997689 , 2}
+	*/
       }; 
  
       run_data_LT = { 
+	{4599 , 65364.4 , 1 , 0.9919 , 0.999968 , 0.999724 , 3}  // +3.40 LD2
+	/*
+//electrons
 	{4918 , 14734.9 , 2 , 0.9974 , 1.00253 , 0.997325,2}
+	*/
       };
 
       run_data_LT_Dummy = {
+	{5904 , 46425.1 , 1 , 0.9969 , 0.999795 , 0.999046 , 2}
+	/*
+//electrons
 	{5904 , 46425.1 , 1 , 0.9969 , 0.999795 , 0.999046 , 2},
 	{4920 , 20699.6 , 1 , 0.9974 , 0.9998 , 0.998774 , 2}
+	*/
 };
 
     }
     else if ( momentum_spec_input=="3p04" ){
       p_spec  =3.04 ;
       run_data_ST = { 
+	/*
+//electrons
 	{4947 , 14395.6 , 5 , 0.9976 , 0.984388 , 0.995691 , 1},
 	{4949 , 46227.9 , 2 , 0.9975 , 0.997463 , 0.999032 , 2},
 	{5919 , 31012.7 , 2 , 0.9969 , 1.00294 , 0.997954 , 2},
 	{5920 , 42401.9 , 2 , 0.9969 , 1.00407 , 0.998983 , 2}
+	*/
+	{4609 , 29983.1 , 1 , 0.9931 , 1 , 0.999849 , 3},         // +3.04 C12
+	{5528 , 47554.6 , 1 , 0.9916 , 0.999913 , 0.999831 , 3},  // +3.04 C12
+	{6027 , 74913.1 , 1 , 0.9909 , 0.999971 , 0.999846 , 3}   // +3.04 C12
+
       }; 
   
     run_data_LT = { 
+      {4610 , 32254.4 , 1 , 0.9934 , 0.999792 , 0.999494 , 3},  // +3.04 LD2
+      {5520 , 20584.6 , 1 , 0.9935 , 0.999946 , 0.99979 , 3}    // + 3.04 LD2
+      /*
+//electrons
       {4956 , 2760.81 , 3 , 0.9976 , 0.999951 , 0.988337 , 2},
       {4957 , 18887.9 , 3 , 0.9975 , 1.00042 , 0.997448 , 2}
+      */
     };
 
     run_data_LT_Dummy = {
+      {4954 , 12604.5 , 1 , 0.9974 , 0.997924 , 0.99535 , 2}
+      /*
+//electrons
       {4954 , 12604.5 , 1 , 0.9974 , 0.997924 , 0.99535 , 2},
       {5925 , 32672.8 , 1 , 0.9969 , 0.999013 , 0.997668 , 2}
+      */
 };
 
     }
     else if ( momentum_spec_input=="2p71" ){
       p_spec  = 2.71 ;
       run_data_ST = { 
+	/*
+//electrons
 	{4969 , 27356.2 , 2 , 0.9977 , 0.998359 , 0.997904 , 2},
 	{4970 , 13385.7 , 9 , 0.9975 , 1.00852 , 0.997008 , 1},
 	{5935 , 39050.4 , 3 , 0.997 , 1.00903 , 0.99846 , 2},
 	{6590 , 38932.2 , 2 , 0.9971 , 0.998937 , 0.998498 , 2}
+
+	*/
+	{4613 , 37492.5 , 1 , 0.9942 , 0.999952 , 0.999777 , 3},  // +2.71 C12
+	{6045 , 45261 , 1 , 0.9934 , 0.999906 , 0.999738 , 3}     // +2.71 C12
       }; 
  
       run_data_LT = { 
+	{4611 , 31247.6 , 1 , 0.9946 , 0.999645 , 0.999112 , 3}  // +2.71 LD2
+	/*
+//electrons
 	{4958 , 18426.9 , 5 , 0.9974 , 1.00212 , 0.998242 , 2},
 	{4962 , 17490.4 , 5 , 0.9973 , 1.0078 , 0.997956 ,2 }
-
+	*/
       };
       run_data_LT_Dummy = {
+	{4960 , 46473.3 , 2 , 0.9976 , 1.00287 , 0.999392 , 2}
+	/*
+//electrons
 	{4960 , 46473.3 , 2 , 0.9976 , 1.00287 , 0.999392 , 2},
 	{5929 , 27066.1 , 2 , 0.9969 , 0.995755 , 0.999132 , 2}
+	*/
+
 };
 
     }
     else if ( momentum_spec_input=="2p42" ){
       p_spec  =2.42 ;
+
       run_data_ST = { 
+	{4641 , 41855 , 1 , 0.9952 , 0.999771 , 0.99964 , 3},       // +2.421 C12
+	//{4642 , 34541.7 , 65 , 0.9949 , 1.0512 , 0.998875 , 1},    // +2.421 C12
+	{6062 , 38613 , 1 , 0.9946 , 0.999729 , 0.99963 , 3}//,       // +2.42 C12
+	//	{6063 , 41657.6 , 65 , 0.9957 , 1.05531 , 0.998857 , 1}  // +2.42 C12
+
+
+
+	/*
+//electrons
 	{5004 , 11347.6 , 17 , 0.9974 , 0.997477 , 0.996712 , 1},
 	{5005 , 15970.7 , 5 , 0.9975 , 0.990934 , 0.998845 , 2},
 	{5006 , 43256.9 , 5 , 0.9974 , 1.00113 , 0.999396 , 2},
 	{5949 , 34700.3 , 5 , 0.9969 , 0.993913 , 0.998839 , 2},
 	{5950 , 17699.3 , 17 , 0.9965 , 1.01534 , 0.995359 , 1},
 	{6591 , 16945.3 , 2 , 0.9971 , 1.00072 , 0.993626 , 2},
-	{6592 , 18543.6 , 17 , 0.997 , 1.01001 , 0.998853 , 1}
+	{6592 , 18543.6 , 17 , 0.997 , 1.01001 , 0.998853 , 1}*/
       }; 
  
       run_data_LT = { 
+
+	//{4634 , 32985.9 , 257 , 0.9901 , 1.14568 , 0.999808 , 1},// +2.421 LD2 
+	{4636 , 36522.2 , 1 , 0.9944 , 0.999038 , 0.997509 , 3}  // +2.421 LD2
+
+
+	/*
+//electrons
 	{5019 , 8647.4 , 33 , 0.997 , 1.05237 , 0.995873, 1},
 	{5020 , 13782.4 , 9 , 0.997 , 1.0115 , 0.998482 , 2}
+
+	*/
       };
 
       run_data_LT_Dummy = {
+
+	{4622 , 20526.7 , 1 , 0.9952 , 0.999868 , 0.999847 , 3},  // +2.421 dummy
+	//{4623 , 16950.7 , 65 , 1 , 1.02725 , 0.999902 , 1},       // +2.421 dummy
+	{6071 , 24624.7 , 1 , 0.9939 , 0.999456 , 0.999825 , 3}//,  // +2.42 dummy 
+	//{6073 , 23257.8 , 33 , 0.9943 , 1.02359 , 0.99879 , 1}    // +2.42 dummy
+
+	/*
+//electrons
 	{5958 , 19936.3 , 2 , 0.997 , 0.997628 , 0.997547 , 2},
 	{5959 , 12915.6 , 9 , 0.9966 , 1.00056 , 0.992086 , 1},
 	{5015 , 9896.94 , 9 , 0.9976 , 1.00794 , 0.993851 , 1},
 	{5016 , 14157.8 , 3 , 0.9975 , 1.0125 , 0.99876 , 2}
+	*/
 };
 
 
@@ -1256,7 +1441,7 @@ else if      ( momentum_spec_input=="5p42"   ){
   TFile *f_st_mc   = new TFile((const char*) f_st_mc_st  );
   TFile *f_lt_mc   = new TFile((const char*) f_lt_mc_st  );
   TTree *t_st_mc ,*t_lt_mc;
-  if (spectrometer=="HMS"){
+  if (spectrometer=="HMS" || spectrometer=="test"){
 	  t_st_mc   = (TTree*) f_st_mc  ->Get("h1");
 	  t_lt_mc   = (TTree*) f_lt_mc  ->Get("h1");
 	}
@@ -1271,7 +1456,7 @@ else if      ( momentum_spec_input=="5p42"   ){
   setBranchAddresses_mc(t_lt_mc    , lt_vars_mc,spectrometer);
 double low_lim_hist , high_lim_histo;
 
-if (spectrometer=="HMS")      {
+if (spectrometer=="HMS" || spectrometer=="test")      {
   if (var_dep == "delta") {  low_lim_hist=-8.1  ; high_lim_histo=8.1;} // if you are binning in delta
   if (var_dep == "xb")    {  low_lim_hist=0.1   ; high_lim_histo=1.5;} // if you are binning in xb
 }
@@ -1279,7 +1464,10 @@ else if (spectrometer=="SHMS"){low_lim_hist=-10.1 ; high_lim_histo=22.1;}
 
 
   TH1F *X_MC_LT = new TH1F("X SIM LT ", "X SIM LT", N_BINS, low_lim_hist, high_lim_histo);
-  X_MC_LT->GetXaxis()->SetTitle("delta");
+
+  if (var_dep == "delta") { X_MC_LT->GetXaxis()->SetTitle("delta");}
+  else if (var_dep == "xb") { X_MC_LT->GetXaxis()->SetTitle("xb");}
+
   X_MC_LT->GetYaxis()->SetTitle("Counts");
 
   TH1F *X_MC_ST         = (TH1F*)X_MC_LT->Clone();
@@ -1297,7 +1485,7 @@ else if (spectrometer=="SHMS"){low_lim_hist=-10.1 ; high_lim_histo=22.1;}
   X_Data_LT_Dummy->Sumw2();
   X_MC_ST_Unweighted->Sumw2();
   X_MC_LT_Unweighted->Sumw2();
-
+  cout<<__LINE__<<endl;
   vector<double>   V1_lt,V2_lt,V3_lt,V4_lt,V5_lt,V6_lt,V7_lt,V8_lt,V9_lt,V10_lt,V11_lt,V12_lt,V13_lt;
   vector<double>   V1_st,V2_st,V3_st,V4_st,V5_st,V6_st,V7_st,V8_st,V9_st,V10_st,V11_st,V12_st,V13_st;
 
@@ -1307,21 +1495,22 @@ else if (spectrometer=="SHMS"){low_lim_hist=-10.1 ; high_lim_histo=22.1;}
   const int size_st= V1_st.size();
   const int size_lt= V1_lt.size();
   cout<<"size of V1_ST: "<<size_st<< " , and V1_LT: "<< size_lt <<endl;
-
+  cout<<__LINE__<<endl;
   TGraph2DErrors* gr2D_SigmaRad_ST  		= createGraph2D(V2_st, V3_st, V9_st, size_st);
   TGraph2DErrors* gr2D_SigmaBorn_ST 		= createGraph2D(V2_st, V3_st, V6_st, size_st);
   TGraph2DErrors* gr2D_SigmaRad_LT  		= createGraph2D(V2_lt, V3_lt, V9_lt, size_lt);
   TGraph2DErrors* gr2D_SigmaBorn_LT 		= createGraph2D(V2_lt, V3_lt, V6_lt, size_lt);
   TGraph2DErrors* gr2D_CoulombCorrection_ST     = createGraph2D(V2_st, V3_st, V13_st,size_st);
-  
+  cout<<__LINE__<<endl;
   Long64_t nentries_st_mc   = t_st_mc->GetEntries(); 
+  cout<<__LINE__<<endl;
   Long64_t nentries_lt_mc   = t_lt_mc->GetEntries();
-
+  cout<<__LINE__<<endl;
   double mc_scale_ST , mc_scale_LT;
-
+  cout<<__LINE__<<endl;
   mc_scale_ST = calculate_mc_scale_factor( nentries_st_mc, p_spec, density_ST, length_ST, AM_ST, sim_charge_ST, delta_hi, delta_lo );
   mc_scale_LT = calculate_mc_scale_factor( nentries_lt_mc, p_spec, density_LT, length_LT, AM_LT, sim_charge_LT, delta_hi, delta_lo );
- 
+  cout<<__LINE__<<endl;
   if (trigger_select=="ELREAL"){
   // here Im keeping all the entries with trigger == 2 (ELREAL)
   run_data_ST.erase(std::remove_if(run_data_ST.begin(), run_data_ST.end(), [](const ScaleFactors& data) {
@@ -1341,7 +1530,7 @@ else if (spectrometer=="SHMS"){low_lim_hist=-10.1 ; high_lim_histo=22.1;}
   ////////////////////
   /////   DATA   /////
   ////////////////////
-  
+  cout<<__LINE__<<endl;
     double total_SF_ST = 0.0;
     for (const auto& data : run_data_ST) { total_SF_ST += (data.charge*data.Eff_Fid*data.Eff_Elec_LiveTime*data.Eff_Comp_LiveTime) / data.PS; }
     double production_scale_ST = 1.0 / total_SF_ST;     cout<< "production_scale_ST : " << production_scale_ST <<endl;
@@ -1351,7 +1540,7 @@ else if (spectrometer=="SHMS"){low_lim_hist=-10.1 ; high_lim_histo=22.1;}
     double total_SF_LT_Dummy = 0.0;
     for (const auto& data : run_data_LT_Dummy) { total_SF_LT_Dummy += (data.charge*data.Eff_Fid*data.Eff_Elec_LiveTime*data.Eff_Comp_LiveTime) / data.PS; }
     double production_scale_LT_Dummy = 1.0 / total_SF_LT_Dummy;     cout<< "production_scale_LT_Dummy : " << production_scale_LT_Dummy <<endl;
-
+    cout<<__LINE__<<endl;
     double cuts_delta_min_st , cuts_delta_max_st , cuts_ytar_min_st , cuts_ytar_max_st , cuts_ph_min_st , cuts_ph_max_st , cuts_th_min_st , cuts_th_max_st , cuts_npeSum_st , cuts_etotTrack_st;
     double cuts_delta_min_lt , cuts_delta_max_lt , cuts_ytar_min_lt , cuts_ytar_max_lt , cuts_ph_min_lt , cuts_ph_max_lt , cuts_th_min_lt , cuts_th_max_lt , cuts_npeSum_lt , cuts_etotTrack_lt;
     double cuts_delta_min_st_mc, cuts_delta_max_st_mc, cuts_ytar_min_st_mc, cuts_ytar_max_st_mc, cuts_ph_min_st_mc, cuts_ph_max_st_mc, cuts_th_min_st_mc, cuts_th_max_st_mc, cuts_npeSum_st_mc, cuts_etotTrack_st_mc;
@@ -1365,7 +1554,7 @@ else if (spectrometer=="SHMS"){low_lim_hist=-10.1 ; high_lim_histo=22.1;}
     outFile_runs_LT_Dummy << "run\ttrigger\tYield\tError\n";
 
     for (int i = 0; i < run_data_ST.size(); i++) {
-    
+      if (spectrometer=="test"){spectrometer="HMS";}
     TFile *f_st_data = new TFile( Form("/work/smoran/xem2/data/%s/%s_replay_production_%d_-1.root" ,(const char*)spectrometer,(const char*)spectrometer_lowercase ,run_data_ST[i].run_number ));
     //cout<< Form("/cache/hallc/xem2/analysis/ONLINE/REPLAYS/HMS/PRODUCTION/hms_replay_production_%d_-1.root" , run_data_ST[i].run_number ) <<endl;
     TTree *t_st_data = (TTree*) f_st_data->Get("T");
@@ -1376,7 +1565,7 @@ else if (spectrometer=="SHMS"){low_lim_hist=-10.1 ; high_lim_histo=22.1;}
     cout<<"nentries_data : " << nentries_st_data <<endl;
 
 
-if (spectrometer=="HMS"){
+if (spectrometer=="HMS" || spectrometer=="test"){
 	cuts_delta_min_st  = -8.0 ; 
 	cuts_delta_max_st  = 8.0 ;
 	 cuts_ytar_min_st  = -100;
@@ -1486,7 +1675,7 @@ if(st_vars_data.ptardp > cuts_delta_min_st && st_vars_data.ptardp < cuts_delta_m
       double Eprime ;
       Eprime =  p_spec*(1+0.01*st_vars_data.ptardp);
       double thetarad;
-      if (spectrometer=="HMS")      {thetarad= TMath::ACos((cos(theta_central) + st_vars_data.ptarph*sin(theta_central))/TMath::Sqrt(1. + st_vars_data.ptarph*st_vars_data.ptarph+st_vars_data.ptarth*st_vars_data.ptarth));      }
+      if (spectrometer=="HMS" || spectrometer=="test")      {thetarad= TMath::ACos((cos(theta_central) + st_vars_data.ptarph*sin(theta_central))/TMath::Sqrt(1. + st_vars_data.ptarph*st_vars_data.ptarph+st_vars_data.ptarth*st_vars_data.ptarth));      }
       else if (spectrometer=="SHMS"){thetarad= TMath::ACos((cos(theta_central) - st_vars_data.ptarph*sin(theta_central))/TMath::Sqrt(1. + st_vars_data.ptarph*st_vars_data.ptarph+st_vars_data.ptarth*st_vars_data.ptarth));      }
       
       double thetadeg = thetarad*(180.0/3.14);                   
@@ -1494,7 +1683,7 @@ if(st_vars_data.ptardp > cuts_delta_min_st && st_vars_data.ptardp < cuts_delta_m
       if (var_dep=="delta")  { var_x_axis = st_vars_data.ptardp; }
       else if (var_dep=="xb"){ var_x_axis = deltaToX( st_vars_data.ptardp , p_spec , Einitial , angle);  }
       //cout<< "var_x_axis : "<< var_x_axis <<endl;
-      //cout<< "st_vars_data.ptardp : "<< st_vars_data.ptardp <<" , pspec: "<<p_spec << " Einitial: "<< Einitial<< " , angle: "<< angle << endl;
+      //cout<< "st_vars_data.ptardp : "<< st_vars_data.ptardp <<" , pspec: "<<p_spec << " Einitial: "<< Einitial<< " , angle: "<< angle << " , Xb: "<< var_x_axis<< endl;
       if (F2_option) { weight_F2 = weight_calculateF2( thetadeg ,  Eprime ,  Einitial)               ;}      else {  weight_F2 =1.0;}
 		X_tmp->Fill( var_x_axis  , weight_F2   );
 
@@ -1507,7 +1696,7 @@ if(st_vars_data.ptardp > cuts_delta_min_st && st_vars_data.ptardp < cuts_delta_m
   }
     outFile_runs_ST.close();
       for (int i = 0; i < run_data_LT.size(); i++) {
-    
+	if (spectrometer=="test"){spectrometer="HMS";}    
     TFile *f_lt_data = new TFile( Form("/work/smoran/xem2/data/%s/%s_replay_production_%d_-1.root" ,(const char*)spectrometer,(const char*)spectrometer_lowercase , run_data_LT[i].run_number ));
     TTree *t_lt_data = (TTree*) f_lt_data->Get("T");
     Variables lt_vars_data;
@@ -1524,7 +1713,7 @@ if(st_vars_data.ptardp > cuts_delta_min_st && st_vars_data.ptardp < cuts_delta_m
 		    lt_vars_data.ptary  < cuts_ytar_max_lt  && lt_vars_data.ptary  > cuts_ytar_min_lt && lt_vars_data.ptarx < 2.0){
 		    double Eprime =  p_spec*(1+0.01*lt_vars_data.ptardp);
 		    double thetarad;
-      		    if (spectrometer=="HMS")      {thetarad= TMath::ACos((cos(theta_central) + lt_vars_data.ptarph*sin(theta_central))/TMath::Sqrt(1. + lt_vars_data.ptarph*lt_vars_data.ptarph+lt_vars_data.ptarth*lt_vars_data.ptarth));      }
+      		    if (spectrometer=="HMS" || spectrometer=="test")      {thetarad= TMath::ACos((cos(theta_central) + lt_vars_data.ptarph*sin(theta_central))/TMath::Sqrt(1. + lt_vars_data.ptarph*lt_vars_data.ptarph+lt_vars_data.ptarth*lt_vars_data.ptarth));      }
                     else if (spectrometer=="SHMS"){thetarad= TMath::ACos((cos(theta_central) - lt_vars_data.ptarph*sin(theta_central))/TMath::Sqrt(1. + lt_vars_data.ptarph*lt_vars_data.ptarph+lt_vars_data.ptarth*lt_vars_data.ptarth));      }
 		    double thetadeg = thetarad*(180.0/3.14); 
 		    double weight_F2  , var_x_axis;
@@ -1546,7 +1735,7 @@ if(st_vars_data.ptardp > cuts_delta_min_st && st_vars_data.ptardp < cuts_delta_m
 
       //dummy
       for (int i = 0; i < run_data_LT_Dummy.size(); i++) {
-
+	if (spectrometer=="test"){spectrometer="HMS";}
 	TFile *f_lt_data_Dummy = new TFile( Form("/work/smoran/xem2/data/%s/%s_replay_production_%d_-1.root" ,(const char*)spectrometer,(const char*)spectrometer_lowercase, run_data_LT_Dummy[i].run_number ));
 	TTree *t_lt_data_Dummy = (TTree*) f_lt_data_Dummy->Get("T");
 	Variables lt_vars_data_Dummy;
@@ -1565,7 +1754,7 @@ if(st_vars_data.ptardp > cuts_delta_min_st && st_vars_data.ptardp < cuts_delta_m
 	     
 	     double Eprime =  p_spec*(1+0.01*lt_vars_data_Dummy.ptardp);
 	     double thetarad;
-      	     if (spectrometer=="HMS")      {thetarad= TMath::ACos((cos(theta_central) + lt_vars_data_Dummy.ptarph*sin(theta_central))/TMath::Sqrt(1. + lt_vars_data_Dummy.ptarph*lt_vars_data_Dummy.ptarph+lt_vars_data_Dummy.ptarth*lt_vars_data_Dummy.ptarth));      }
+      	     if (spectrometer=="HMS"||spectrometer=="test")      {thetarad= TMath::ACos((cos(theta_central) + lt_vars_data_Dummy.ptarph*sin(theta_central))/TMath::Sqrt(1. + lt_vars_data_Dummy.ptarph*lt_vars_data_Dummy.ptarph+lt_vars_data_Dummy.ptarth*lt_vars_data_Dummy.ptarth));      }
              else if (spectrometer=="SHMS"){thetarad= TMath::ACos((cos(theta_central) - lt_vars_data_Dummy.ptarph*sin(theta_central))/TMath::Sqrt(1. + lt_vars_data_Dummy.ptarph*lt_vars_data_Dummy.ptarph+lt_vars_data_Dummy.ptarth*lt_vars_data_Dummy.ptarth));      }
 	     double thetadeg = thetarad*(180.0/3.14); 
 	     double weight_F2 , var_x_axis;
@@ -1592,6 +1781,9 @@ if(st_vars_data.ptardp > cuts_delta_min_st && st_vars_data.ptardp < cuts_delta_m
       X_Data_ST->Scale(production_scale_ST);
       X_Data_LT->Scale(production_scale_LT);
       X_Data_LT_Dummy->Scale(production_scale_LT_Dummy);
+
+      writeHistogramToTextFile( X_Data_ST , p_spec , Einitial, angle , out_name + "_CNY_ST_TABLE.txt" ) ;
+      writeHistogramToTextFile( X_Data_LT , p_spec , Einitial, angle , out_name + "_CNY_LT_TABLE.txt" ) ;
 
       float R , thickness_LD2 , thickness_dummy;
       float LD2_entrance = 0.168;                        //mm   
@@ -1628,7 +1820,7 @@ if(st_vars_data.ptardp > cuts_delta_min_st && st_vars_data.ptardp < cuts_delta_m
 	  Eprimei =  p_spec*(1+0.01*lt_vars_mc.hsdpi);
 	  X_MC_LT_Unweighted->Fill( lt_vars_mc.hsdp) ;
 	  double thetarad , thetaradi;
-	  if (spectrometer=="HMS"){
+	  if (spectrometer=="HMS"||spectrometer=="test"){
 	   thetarad = TMath::ACos((cos(theta_central) + lt_vars_mc.hpsyptar*sin(theta_central))/TMath::Sqrt( 1. + lt_vars_mc.hpsxptar*lt_vars_mc.hpsxptar  +lt_vars_mc.hpsyptar*lt_vars_mc.hpsyptar  ));
 	   thetaradi= TMath::ACos((cos(theta_central) + lt_vars_mc.hpsyptari*sin(theta_central))/TMath::Sqrt(1. + lt_vars_mc.hpsxptari*lt_vars_mc.hpsxptari+lt_vars_mc.hpsyptari*lt_vars_mc.hpsyptari));
 	  }
@@ -1642,7 +1834,7 @@ if(st_vars_data.ptardp > cuts_delta_min_st && st_vars_data.ptardp < cuts_delta_m
 	  double thetadegi = thetaradi*(180.0/3.14);
 	  thetadeg  = findNearestValue(thetadeg, angle);
 	  thetadegi = findNearestValue(thetadegi, angle);
-	  double weight = Interpolate1DFromGraph2DErrors(gr2D_SigmaRad_LT, Eprimei, thetadegi );  // using theta calculated        
+	  double weight = Interpolate1DFromGraph2DErrors(gr2D_SigmaRad_LT, Eprimei, thetadegi );  
 	  double weight_F2;
 	  if (F2_option) { weight_F2 = weight_calculateF2( thetadeg ,  Eprime ,  Einitial)               ;}
 	  else {weight_F2 = 1.0;}
@@ -1688,7 +1880,7 @@ if(st_vars_data.ptardp > cuts_delta_min_st && st_vars_data.ptardp < cuts_delta_m
 	  Eprimei =  p_spec*(1+0.01*st_vars_mc.hsdpi);
 	  X_MC_ST_Unweighted->Fill( st_vars_mc.hsdp);
 	  double thetarad, thetaradi;
-	  if (spectrometer=="HMS"){
+	  if (spectrometer=="HMS" || spectrometer=="test"){
 	    thetarad = TMath::ACos((cos(theta_central) + st_vars_mc.hpsyptar*sin(theta_central))/TMath::Sqrt(1. + st_vars_mc.hpsxptar*st_vars_mc.hpsxptar+st_vars_mc.hpsyptar*st_vars_mc.hpsyptar));
 	    thetaradi= TMath::ACos((cos(theta_central) + st_vars_mc.hpsyptari*sin(theta_central))/TMath::Sqrt(1. + st_vars_mc.hpsxptari*st_vars_mc.hpsxptari+st_vars_mc.hpsyptari*st_vars_mc.hpsyptari));
 }
@@ -1781,15 +1973,6 @@ if(st_vars_data.ptardp > cuts_delta_min_st && st_vars_data.ptardp < cuts_delta_m
     hsdp_values_ST_Born.push_back(binCenter);
     weight_values_ST_Born.push_back(weight);
 
-    if (false){
-    cout<< " LAST STEP ST: " << i << "\n\n" << endl;
-    cout << "pre weighting content: "   << X_Data_ST->GetBinContent(i) << endl;
-    cout << "pre weighting Error: "     << X_Data_ST->GetBinError(i)   << endl;
-    cout << "weighting factor: "        <<  weight                     << endl;
-    cout << "post weighting content: "  << updatedValue                << endl;
-    cout << "ost weighting Error: "     << binError * weight           << endl;
-
-    }
                                                                                                          
   }                                                                                                                                                                                     
  
@@ -1806,18 +1989,6 @@ if(st_vars_data.ptardp > cuts_delta_min_st && st_vars_data.ptardp < cuts_delta_m
 
     hsdp_values_LT_Born.push_back(binCenter);
     weight_values_LT_Born.push_back(weight);
-
-    if (false ){
-      cout<< " LAST STEP LD2: " << i << "\n\n" << endl;
-      cout << "pre weighting content: "   << X_Data_LT->GetBinContent(i) << endl;
-      cout << "Eprime: " << Eprime << " , theta: " << theta_central_deg << endl;
-      cout << "pre weighting Error: "     << X_Data_LT->GetBinError(i)   << endl;
-      cout << "weighting factor: "        <<  weight                     << endl;
-      cout << "post weighting content: "  << updatedValue                << endl;
-      cout << "ost weighting Error: "     << binError * weight           << endl;
-
-    }
-
 
   }                    
 
@@ -1855,6 +2026,7 @@ int main(int argc, char** argv) {
   if (argc != 8) {
     std::cerr << "Usage: " << argv[0] << " <target_input> <angle_input> <momentum_spec_input> <spectrometer> <ytar_corr> <MCJacobian_corr> <delta_corr>" << std::endl;
     std::cerr << "Example: " << argv[0] << " C12 20 2p42 HMS ON ON ON" << std::endl;
+    std::cerr << "Example of a TEST case: " << argv[0] << " C12 20 5p87 test ON ON ON" << std::endl;
     return 1;
   }
 
@@ -1911,7 +2083,7 @@ void ImportRadcor(vector<double> &v1,vector<double> &v2,vector<double> &v3,vecto
 }
 
 void setBranchAddresses_mc(TTree *tree, Variables &vars, TString spectrometer_option) {
-if (spectrometer_option=="HMS"){
+if (spectrometer_option=="HMS" || spectrometer_option=="test"){
   tree->SetBranchAddress("hsdelta", &vars.hsdp);
   tree->SetBranchAddress("hsxpfp",  &vars.hspxp);
   tree->SetBranchAddress("hsypfp",  &vars.hspyp);
@@ -1949,7 +2121,7 @@ void setBranchAddresses_data(TTree *tree, Variables &vars, TString spectrometer_
 if (spectrometer_option=="SHMS"){cout<< "INSIDE SETBRANCHADDRESS INSIDE "<<spectrometer_option<<endl;}
 
 
-if (spectrometer_option=="HMS"){
+if (spectrometer_option=="HMS" || spectrometer_option=="test"){
 //cout<< "TAKING HMS BRANCHES"<<endl;
   tree->SetBranchAddress("H.gtr.dp",            &vars.ptardp);   //data delta    
   tree->SetBranchAddress("H.gtr.th",            &vars.ptarth);   //data target theta 
@@ -2007,7 +2179,7 @@ double calculate_mc_scale_factor(int nentries_mc , double p_spec, double density
 double calculate_BjorkenX ( double p_spec , double hsdp , double hpsyptar , double hpsxptar , double& Eprime , double& thetadeg, double theta_central, TString spectrometer_option ) {
   Eprime   = p_spec*(1+0.01*hsdp);
   double thetarad; 
- if      ( spectrometer_option=="HMS")  thetarad = TMath::ACos((cos(theta_central) + hpsyptar*sin(theta_central))/TMath::Sqrt(1. + hpsxptar*hpsxptar+hpsyptar*hpsyptar));
+ if      ( spectrometer_option=="HMS" || spectrometer_option =="test")  thetarad = TMath::ACos((cos(theta_central) + hpsyptar*sin(theta_central))/TMath::Sqrt(1. + hpsxptar*hpsxptar+hpsyptar*hpsyptar));
  else if ( spectrometer_option=="SHMS") thetarad = TMath::ACos((cos(theta_central) - hpsyptar*sin(theta_central))/TMath::Sqrt(1. + hpsxptar*hpsxptar+hpsyptar*hpsyptar)); 
  
   thetadeg = thetarad*(180.0/3.1415);
@@ -2168,7 +2340,14 @@ double deltaToX(double delta , double p_spec , double Einitial , double angle) {
   return X_Bjorken;
 }
 
+double XTodelta(double X_Bjorken, double p_spec, double Einitial, double angle) {
+  double angle_radians = angle * 3.1418 / 180.0;
+  double sin2 = TMath::Sin(angle_radians / 2.0) * TMath::Sin(angle_radians / 2.0);
+  double Eprime = (2 * Mp * Einitial * X_Bjorken) / (X_Bjorken * 2 * Mp + 4 * Einitial * sin2);
+  double delta = (Eprime / p_spec - 1) * 100.0;
 
+  return delta;
+}
 void convertHistogramToGraph(TH1F* h_delta, TGraphErrors*& graph,  double p_spec , double Einitial , double angle , TString out_name) {
   int nBins = h_delta->GetNbinsX();
 
@@ -2269,10 +2448,16 @@ void writeHistogramToTextFile(TH1F* hist, double p_spec , double Einitial , doub
   int nBins = hist->GetNbinsX();
   for (int i = 1; i <= nBins; ++i) {
     int binNumber     = i;
-    double delta      = hist->GetXaxis()->GetBinCenter(i);
+    double delta , xb; 
+    if (var_dep=="delta") { delta      = hist->GetXaxis()->GetBinCenter(i);  }
+    if (var_dep=="xb")    { xb         = hist->GetXaxis()->GetBinCenter(i);  }
+
     double binContent = hist->GetBinContent(i);
     double binError   = hist->GetBinError(i);
-    double xb         = deltaToX(delta, p_spec, Einitial, angle);
+
+    if (var_dep=="delta") {  xb         = deltaToX(delta, p_spec, Einitial, angle);} 
+    if (var_dep=="xb")    {  delta      = XTodelta( xb ,  p_spec, Einitial, angle);}
+
     double Eprime     = p_spec*(1+0.01*delta);
     double Q2         = 2.0*Mp*xb*(Einitial-Eprime);
     double nu         = Einitial-Eprime;
@@ -2280,6 +2465,9 @@ void writeHistogramToTextFile(TH1F* hist, double p_spec , double Einitial , doub
 
     outFile << binNumber << "\t" << xb <<"\t"<< delta << "\t" << Q2<< "\t"<< Eprime<< "\t"<< xi <<"\t" << binContent << "\t" << binError << "\n";
   }
+
+
+
   outFile.close();
   std::cout << "Histogram data written to " << filename << std::endl;
 }
