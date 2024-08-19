@@ -40,7 +40,7 @@ const int    N_BINS         = 80;
 const double TOLERANCE      = 1e-8;
 const bool   F2_option      = false;     //it should be false always, calculating F2 event by event is not the right approach
 const char* var_dep         = "delta";      // delta or xb
-const char* trigger_select  = "NOELREAL";  // ELREAL or anything else to include 3/4 triggers (not reason to include those in physics analysis)
+const char* trigger_select  = "ELREAL";  // ELREAL or anything else to include 3/4 triggers (not reason to include those in physics analysis)
 
 struct Variables {
   // Variables for SIMULATION
@@ -83,6 +83,15 @@ struct ScaleFactors {
   double Eff_Comp_LiveTime;
   double trigger ; 
 };
+void fillScaleFactors(const std::string& table_file, 
+                      const std::string& target_input, 
+                      const std::string& angle_input, 
+                      const std::string& spectrometer, 
+                      const std::string& momentum_spec_input, 
+                      double p_spec,
+                      std::vector<ScaleFactors>& run_data_LT, 
+                      std::vector<ScaleFactors>& run_data_ST, 
+                      std::vector<ScaleFactors>& run_data_LT_Dummy) ;
 
 void ImportRadcor(vector<double> &v1,vector<double> &v2,vector<double> &v3,vector<double> &v4,vector<double> &v5,vector<double> &v6,vector<double> &v7,vector<double> &v8,vector<double> &v9, vector<double> &v10,vector<double> &v11,vector<double> &v12,vector<double> &v13, const char * filename);
 void setBranchAddresses_mc(TTree *tree, Variables &vars, TString spectrometer_option); 
@@ -179,12 +188,15 @@ void cross_Sections_updated_workingProcess (const char* target_in = "C12", const
   int delta_hi , delta_lo;
   double density_ST, length_ST  ;
 
+  if  ( target_input=="C12")  {AM_ST         = 12.0;}
+  if  ( angle_input=="20"  )  {angle         = 20.0;}
+  else if (angle_input=="26") {angle         = 26.0;}
+  else if (angle_input=="35") {angle         = 35.0;}
+
   if  ( target_input=="C12" && angle_input=="20" && spectrometer=="test"){
 
     mc_file_lt_st = "/work/smoran/xem2/cross_sections/EXTERNALS_tables/xem2_emc_rc_d2cryo22_hms.out";
     mc_file_st_st = "/work/smoran/xem2/cross_sections/EXTERNALS_tables/xem2_emc_rc_12carbon22_hms.out";
-    angle         = 20.0;
-    AM_ST         = 12.0;
     density_ST    = 2.00;
     length_ST     = 0.287;
     delta_hi      = 20;
@@ -210,8 +222,6 @@ void cross_Sections_updated_workingProcess (const char* target_in = "C12", const
 
     mc_file_lt_st = "/work/smoran/xem2/cross_sections/EXTERNALS_tables/xem2_emc_rc_d2cryo22_hms.out";
     mc_file_st_st = "/work/smoran/xem2/cross_sections/EXTERNALS_tables/xem2_emc_rc_12carbon22_hms.out";
-    angle         = 35.0;
-    AM_ST         = 12.0;
     density_ST    = 2.00;
     length_ST     = 0.287;
     delta_hi      = 20;
@@ -532,7 +542,7 @@ else if ( momentum_spec_input=="2p72"   ){
 	  {5393 , 43478.1 , 1 , 0.9975 , 0.999962 , 0.999811 , 1},
 	  {5394 , 126517 , 1 , 0.9977 , 1 , 0.999959 , 2},
 	  {5395 , 149159 , 1 , 0.9979 , 0.999989 , 0.999958 , 2},
-	  {5396 , 106622 , 1 , 0.9979 , 1.00001 , 0.999967 , 2},
+	  {5396 , 106622 , 1 , 0.9979 , 1.00001 , 0.999967 , 2}/*,
 	  {5398 , 137733 , 1 , 0.9975 , 1 , 0.999956 , 2},
 	  {5399 , 131493 , 1 , 0.9979 , 1 , 0.999958 , 2},
 	  {5404 , 41185.8 , 1 , 0.9978 , 0.999989 , 0.999972 , 2},
@@ -549,29 +559,29 @@ else if ( momentum_spec_input=="2p72"   ){
 	  {6395 , 125147 , 1 , 0.9965 , 1.00002 , 0.999981 , 2},
 	  {6396 , 122199 , 1 , 0.9977 , 1.00001 , 0.999975 , 2},
 	  //{6397 , 46543.2 , 1 , 0.9961 , 1 , 0.99995 , 2},//not in tape library
-	  //{6398 , 50379.5 , 1 , 0.9963 , 0.999974 , 0.999817 , 1}//not in tape library
+	  //{6398 , 50379.5 , 1 , 0.9963 , 0.999974 , 0.999817 , 1}//not in tape library*/
 	  
 
 };
 
 	run_data_LT = {
 	  {5356 , 106531 , 1 , 0.9972 , 1 , 0.999955 , 2},
-	  {5357 , 131343 , 1 , 0.9972 , 0.99999 , 0.999934 , 2},
+	  {5357 , 131343 , 1 , 0.9972 , 0.99999 , 0.999934 , 2}/*,
 	  {5358 , 38086.5 , 1 , 0.9977 , 1.00004 , 0.999932 , 2},
 	  {5360 , 132089 , 1 , 0.9971 , 1.00001 , 0.99993 , 2},
 	  {5361 , 35269.7 , 1 , 0.9971 , 1 , 0.999914 , 2},
 	  {5363 , 12246.8 , 1 , 0.998 , 1 , 0.999991 , 2},
 	  {5364 , 129717 , 1 , 0.9977 , 1 , 0.999938 , 2},
-	  {5365 , 52677.6 , 1 , 0.9972 , 1 , 0.999919 , 2}
+	  {5365 , 52677.6 , 1 , 0.9972 , 1 , 0.999919 , 2}*/
 };
 	run_data_LT_Dummy = {
 	  {5369 , 104836 , 1 , 0.998 , 1 , 0.999942 , 2},
-	  {5370 , 106162 , 1 , 0.9981 , 1.00001 , 0.999959 , 2},
+	  {5370 , 106162 , 1 , 0.9981 , 1.00001 , 0.999959 , 2}/*,
 	  {6413 , 35025.5 , 1 , 0.9986 , 1 , 0.999988 , 2},
 	  {6414 , 105743 , 1 , 0.998 , 1 , 0.999978 , 2},
 	  {6415 , 79137.2 , 1 , 0.9973 , 1 , 0.999987 , 2},
 	  {6416 , 103945 , 1 , 0.9972 , 0.999989 , 0.999959 , 2},
-	  {6417 , 70449.6 , 1 , 0.9968 , 1 , 0.999994 , 2}
+	  {6417 , 70449.6 , 1 , 0.9968 , 1 , 0.999994 , 2}*/
 };
 	}	
 	
@@ -879,8 +889,6 @@ else if      ( momentum_spec_input=="5p42"   ){
 
     mc_file_lt_st = "/work/smoran/xem2/cross_sections/EXTERNALS_tables/xem2_emc_rc_d2cryo22_hms.out";
     mc_file_st_st = "/work/smoran/xem2/cross_sections/EXTERNALS_tables/xem2_emc_rc_12carbon22_hms.out";
-    angle         = 26.0;
-    AM_ST         = 12.0;
     density_ST    = 2.00;
     length_ST     = 0.287;
     delta_hi      = 20;
@@ -1081,8 +1089,6 @@ else if      ( momentum_spec_input=="5p42"   ){
 
     mc_file_lt_st = "/work/smoran/xem2/cross_sections/EXTERNALS_tables/xem2_emc_rc_d2cryo22_hms.out";
     mc_file_st_st = "/work/smoran/xem2/cross_sections/EXTERNALS_tables/xem2_emc_rc_12carbon22_hms.out";
-    angle         = 20.0;
-    AM_ST         = 12.0;
     density_ST    = 2.00;
     length_ST     = 0.287;
     delta_hi      = 20;
@@ -2708,6 +2714,59 @@ return weight;
 
 
 
+void fillScaleFactors(const std::string& table_file, 
+                      const std::string& target_input, 
+                      const std::string& angle_input, 
+                      const std::string& spectrometer, 
+                      const std::string& momentum_spec_input, 
+                      double p_spec,
+                      std::vector<ScaleFactors>& run_data_LT, 
+                      std::vector<ScaleFactors>& run_data_ST, 
+                      std::vector<ScaleFactors>& run_data_LT_Dummy) {
+  std::ifstream file(table_file);
+  std::string line;
+
+  if (file.is_open()) {
+    // Clear existing data
+    run_data_LT.clear();
+    run_data_ST.clear();
+    run_data_LT_Dummy.clear();
+
+    while (std::getline(file, line)) {
+      if (line.empty() || line[0] == '#') {
+	continue; // Skip empty lines or comments
+      }
+
+      std::stringstream ss(line);
+
+      // Read the line and extract values
+      std::string target, angle, spectr, momentum;
+      double p_spec_in_file;
+      ScaleFactors sf;
+      ss >> target >> angle >> spectr >> momentum >> p_spec_in_file
+	 >> sf.run_number >> sf.charge >> sf.PS >> sf.Eff_Fid 
+	 >> sf.Eff_Elec_LiveTime >> sf.Eff_Comp_LiveTime >> sf.trigger;
+
+      // Check if the current line matches the specified case
+      if (target == target_input && angle == angle_input && spectr == spectrometer && 
+	  momentum == momentum_spec_input && p_spec_in_file == p_spec) {
+                
+	// Determine which vector to fill based on the target
+	if (target == "C12") {
+	  run_data_ST.push_back(sf);
+	} else if (target == "LD2") {
+	  run_data_LT.push_back(sf);
+	} else if (target == "Dummy") {
+	  run_data_LT_Dummy.push_back(sf);
+	}
+      }
+    }
+
+    file.close();
+  } else {
+    std::cerr << "Unable to open file: " << table_file << std::endl;
+  }
+}
 
 
 

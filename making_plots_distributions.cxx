@@ -3,7 +3,18 @@
   TString Case = "HMS";
   TString file;
   if (Case=="SHMS") file="/cache/hallc/xem2/analysis/ONLINE/REPLAYS/SHMS/PRODUCTION/shms_replay_production_17876_-1.root";
-  if (Case=="HMS")  file="/work/smoran/xem2/data/HMS/hms_replay_production_4757_-1.root";
+  //if (Case=="HMS")  file="/work/smoran/xem2/data/HMS/hms_replay_production_4757_-1.root"; //5.878
+  //if (Case=="HMS")  file="/work/smoran/xem2/data/HMS/hms_replay_production_4690_-1.root"; //6.600
+  //if (Case=="HMS")  file="/work/smoran/xem2/data/HMS/hms_replay_production_4805_-1.root"; //5.360
+  //if (Case=="HMS")  file="/work/smoran/xem2/data/HMS/hms_replay_production_4847_-1.root"; //4.78 
+  //if (Case=="HMS")  file="/work/smoran/xem2/data/HMS/hms_replay_production_4876_-1.root"; //4.27
+  //if (Case=="HMS")  file="/work/smoran/xem2/data/HMS/hms_replay_production_4903_-1.root"; //3.81
+  //if (Case=="HMS")  file="/work/smoran/xem2/data/HMS/hms_replay_production_4926_-1.root"; //3.40
+  //if (Case=="HMS")  file="/work/smoran/xem2/data/HMS/hms_replay_production_4949_-1.root"; //3.040
+  //if (Case=="HMS")  file="/work/smoran/xem2/data/HMS/hms_replay_production_4970_-1.root"; //2.71
+  if (Case=="HMS")  file="/work/smoran/xem2/data/HMS/hms_replay_production_5005_-1.root"; //2.42
+
+  const Double_t p_spec        = 2.42; // in GeV, it is the central momentum
 
   TFile *f = new TFile((const char*)file);
   TTree *TSP, *TSH;
@@ -17,7 +28,6 @@
   Double_t ptardp , ptarth , ptarph , Cal , ngcer , ptary, xptar, yptar, Q2, Xbj, ytar, W, nu , xtar;
   Double_t xfp, yfp, xpfp, ypfp;  // FOCAL PLANE VARIABLES
   Double_t theta, Ep;
-  const Double_t p_spec        = 5.878; // in GeV, it is the central momentum 
   Double_t theta_central ;
   if (Case=="SHMS") {theta_central= 8.02*TMath::Pi()/180.  ;}  //8 degrees, this value is in 'ecSHMS_Angle' variable
   if (Case=="HMS"){ theta_central = 20.0*TMath::Pi()/180.  ;   }
@@ -117,7 +127,7 @@
    Q2_h->Fill(Cal);
    if (ngcer>2 && (ptardp)<8.0) { W_h->Fill(Cal);}
    if (ngcer>2) {  Xb_h->Fill(Cal);}
-   if (ngcer<0.5) {    nu_h->Fill(Cal);}
+   if (ngcer<1.0) {    nu_h->Fill(Cal);}
       if (Xb_calc>0.52 ){   Q2_comp->Fill(delta, theta*180./3.1415);}
    //Q2_comp->Fill(delta, theta*180./3.1415);
    Xb_comp->Fill(Xb_calc,Xbj);
@@ -232,7 +242,7 @@ Q2_comp->Draw("colz");
 
   */
   if (Case=="SHMS") {c->SaveAs("assigment4_SHMS.pdf");  c->SaveAs("assigment4_SHMS.root");}
-  if (Case=="HMS")  {c->SaveAs("assigment4_HMS.pdf");   c->SaveAs("assigment4_HMS.root");}
+  if (Case=="HMS")  {c->SaveAs("distributions.pdf");    c->SaveAs("distributions.root");}
 
 
 }
