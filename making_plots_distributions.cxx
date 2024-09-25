@@ -12,9 +12,12 @@
   //if (Case=="HMS")  file="/work/smoran/xem2/data/HMS/hms_replay_production_4926_-1.root"; //3.40
   //if (Case=="HMS")  file="/work/smoran/xem2/data/HMS/hms_replay_production_4949_-1.root"; //3.040
   //if (Case=="HMS")  file="/work/smoran/xem2/data/HMS/hms_replay_production_4970_-1.root"; //2.71
-  if (Case=="HMS")  file="/work/smoran/xem2/data/HMS/hms_replay_production_5005_-1.root"; //2.42
+  //  if (Case=="HMS")  file="/work/smoran/xem2/data/HMS/hms_replay_production_5005_-1.root"; //2.42
 
-  const Double_t p_spec        = 2.42; // in GeV, it is the central momentum
+  TString run= "5876" ; 
+  if (Case=="HMS")  file= (const char*)Form("/work/smoran/xem2/data/HMS/hms_replay_production_%s_-1.root", (const char*)run);
+
+  const Double_t p_spec        = 3.4; // in GeV, it is the central momentum
 
   TFile *f = new TFile((const char*)file);
   TTree *TSP, *TSH;
@@ -25,7 +28,7 @@
   TTree *T   = (TTree*)f->Get("T");      // Hall A Analizer Output DST 
   TTree *E   = (TTree*)f->Get("E");      // Hall A Epics Data
 
-  Double_t ptardp , ptarth , ptarph , Cal , ngcer , ptary, xptar, yptar, Q2, Xbj, ytar, W, nu , xtar;
+  Double_t ptardp , ptarth , ptarph , Cal , ngcer , ptary, xptar, yptar, Q2, Xbj, ytar, W, nu , xtar , AvgCurr;
   Double_t xfp, yfp, xpfp, ypfp;  // FOCAL PLANE VARIABLES
   Double_t theta, Ep;
   Double_t theta_central ;
@@ -54,8 +57,8 @@
   }
   else if (Case=="HMS"){
     T->SetBranchAddress("H.gtr.dp", &ptardp); //data delta (momentum acceptance)
-    T->SetBranchAddress("H.gtr.th", &xptar); //data target theta (dx/dz)    THIS IS 'xptar' 
-    T->SetBranchAddress("H.gtr.ph", &yptar); //data target phi (dy/dz)      THIS IS 'yptar'
+    T->SetBranchAddress("H.gtr.th", &xptar); //data target theta (dx/dz)    THIS IS 'xptar' or  'ptarth''
+    T->SetBranchAddress("H.gtr.ph", &yptar); //data target phi (dy/dz)      THIS IS 'yptar' or  'ptarph'
     T->SetBranchAddress("H.cal.etottracknorm", &Cal); //total deposited energy in the calorimeter normalized by track's momentum
     T->SetBranchAddress("H.kin.Q2"   , &Q2);
     T->SetBranchAddress("H.kin.x_bj" , &Xbj);
@@ -68,6 +71,7 @@
     T->SetBranchAddress("H.dc.xp_fp" , &xpfp);
     T->SetBranchAddress("H.dc.yp_fp" , &ypfp);
     T->SetBranchAddress("H.cer.npeSum", &ngcer);
+    T->SetBranchAddress("H.bcm.bcm4a.AvgCurrent", &AvgCurr);
 
 //theta = TMath::ACos(( cos(theta_central) + yptar * sin(theta_central) ) / TMath::Sqrt( 1. + xptar * xptar + yptar * yptar)); //ThetaLab
 
@@ -78,11 +82,14 @@
   c->Divide(2,1);
  Int_t nbins=170;
 
- TH1F *Q2_h = new TH1F("Q2", "Q2" , nbins, -0.5,2.5);
- TH1F *Xb_h = new TH1F("Xb", "Xb" , nbins, -0.5 , 2.5);
+ TH1F *Q2_h = new TH1F("Q2", "Q2" , nbins, 0,2.5);
+ TH1F *Xb_h = new TH1F("Xb", "Xb" , nbins, 0.1 , 2.5);
  TH1F *W_h  = new TH1F("W", "W"   , nbins, -0.5,2.5);
  TH1F *nu_h = new TH1F("nu","nu"  , nbins , -0.5, 2.5 );
- TH1F *tmp = new TH1F("tmp","tmp"  , nbins , -0.5, 30.5 );
+ TH1F *tmp  = new TH1F("tmp","tmp"  , nbins , -10, 100.5 );
+ TH1F *ecal_h = new TH1F("ecal","ecal"  , nbins , -0.5, 2.5 );
+ TH1F *cer_h  = new TH1F("cer","cer"  , nbins , -0.5, 30.5 );
+ TH1F *xfp_h  = new TH1F("xfp","xfp"  , nbins , -60.0, 60.0 );
 
  TH2F *Q2_comp = new TH2F("Q2_comp","theta v/s delta"       ,nbins,-9,9,nbins,17,23);
  TH2F *Xb_comp = new TH2F("Xb_comp","Xb cal v/s Xb tree"    ,nbins,0,10,nbins,0,10);
@@ -93,7 +100,7 @@
  Xb_h->GetXaxis()->SetTitle("Xbj");
  W_h->GetXaxis()->SetTitle("W");
  nu_h->GetXaxis()->SetTitle("nu");
- tmp->GetXaxis()->SetTitle("ngcer");
+ tmp->GetXaxis()->SetTitle("AvgCurr");
 
 
  Q2_h->GetYaxis()->SetTitle("counts");
@@ -124,22 +131,114 @@
    Double_t W_calc  = TMath::Sqrt(Mp*Mp + 2*Mp*nu_calc - Q2_calc)  ; //invariant mass electron-nucleon interaction
    Double_t Xb_calc = Q2_calc/2./Mp/nu_calc;
    Double_t delta   = ptardp ; 
-   Q2_h->Fill(Cal);
-   if (ngcer>2 && (ptardp)<8.0) { W_h->Fill(Cal);}
-   if (ngcer>2) {  Xb_h->Fill(Cal);}
-   if (ngcer<1.0) {    nu_h->Fill(Cal);}
-      if (Xb_calc>0.52 ){   Q2_comp->Fill(delta, theta*180./3.1415);}
-   //Q2_comp->Fill(delta, theta*180./3.1415);
-   Xb_comp->Fill(Xb_calc,Xbj);
-   W_comp->Fill(W_calc,W);
-   nu_comp->Fill(nu_calc, nu);
-   tmp->Fill(ngcer);
+   //   if (abs(ptardp) && Cal>0.7 &&  ngcer>2 && abs(xptar)<0.085 && abs(yptar)<0.032  ){
+   if (true) {
+   ecal_h->Fill(Cal);
+   cer_h->Fill(ngcer);
+   xfp_h->Fill(xfp);
+   Xb_h->Fill(Xb_calc);
+   tmp->Fill(AvgCurr);
+
+ }
   }
+
+ cout<< "RUN NUMBER: " << run <<endl;
+ cout<< "#ECAL histo: " << endl;
+
+ std::cout << "bin_centers_ecalRUN_"<<run<<" = np.array([";
+ for (int i = 1; i <= nbins; ++i) {
+   double binCenter = ecal_h->GetBinCenter(i);
+   std::cout << binCenter;
+   if (i < nbins) std::cout << ", ";
+ }
+ std::cout << "])\n\n";
+
+ std::cout << "bin_contents_ecalRUN_"<<run<<" = np.array([";
+ for (int i = 1; i <= nbins; ++i) {
+   double binContent = ecal_h->GetBinContent(i);
+   std::cout << binContent;
+   if (i < nbins) std::cout << ", ";
+ }
+ std::cout << "])\n\n" << std::endl;
+
+
+ cout<< "#CER histo: " << endl;
+
+ std::cout << "bin_centers_cerRUN_"<<run<<" = np.array([";
+ for (int i = 1; i <= nbins; ++i) {
+   double binCenter = cer_h->GetBinCenter(i);
+   std::cout << binCenter;
+   if (i < nbins) std::cout << ", ";
+ }
+ std::cout << "])\n\n";
+
+ std::cout << "bin_contents_cerRUN_"<<run<<" = np.array([";
+ for (int i = 1; i <= nbins; ++i) {
+   double binContent = cer_h->GetBinContent(i);
+   std::cout << binContent;
+   if (i < nbins) std::cout << ", ";
+ }
+ std::cout << "])\n\n" << std::endl;
+
+
+ cout<< "#XFP histo: " << endl;
+
+ std::cout << "bin_centers_xfpRUN_"<<run<<" = np.array([";
+ for (int i = 1; i <= nbins; ++i) {
+   double binCenter = xfp_h->GetBinCenter(i);
+   std::cout << binCenter;
+   if (i < nbins) std::cout << ", ";
+ }
+ std::cout << "])\n\n";
+
+ std::cout << "bin_contents_xfpRUN_"<<run<<" = np.array([";
+ for (int i = 1; i <= nbins; ++i) {
+   double binContent = xfp_h->GetBinContent(i);
+   std::cout << binContent;
+   if (i < nbins) std::cout << ", ";
+ }
+ std::cout << "])\n\n" << std::endl;
+
+ cout<< "#Xb histo: " << endl;
+
+ std::cout << "bin_centers_xRUN_"<<run<<" = np.array([";
+ for (int i = 1; i <= nbins; ++i) {
+   double binCenter = Xb_h->GetBinCenter(i);
+   std::cout << binCenter;
+   if (i < nbins) std::cout << ", ";
+ }
+ std::cout << "])\n\n";
+
+ std::cout << "bin_contents_xRUN_"<<run<<" = np.array([";
+ for (int i = 1; i <= nbins; ++i) {
+   double binContent = Xb_h->GetBinContent(i);
+   std::cout << binContent;
+   if (i < nbins) std::cout << ", ";
+ }
+ std::cout << "])\n\n" << std::endl;
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
  Double_t min=0.01;
  Q2_h->SetMinimum(min);
  Xb_h->SetMinimum(min);
  nu_h->SetMinimum(min);
  W_h->SetMinimum(min);
+ tmp->SetMinimum(min);
 
  const Int_t nColors = 18;
  Int_t colors[nColors] = {

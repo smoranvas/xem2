@@ -1,3 +1,4 @@
+
 #include <TGraphErrors.h>
 #include "TFile.h"
 #include "TTree.h"
@@ -115,6 +116,49 @@ bool areEqual(double a, double b, double tolerance);
 double Interpolate1DFromGraph2DErrors(TGraph2DErrors* graph, double Eprime, double angle);
 double findNearestValue(double input, double angle); 
 double weight_calculateF2(double theta_deg , double Eprime , double Eb);
+
+double weight_CSB_corr(   TString targType ,  TString spectrometer_option , double angle , double Ep ){
+  double a, b , R, finalFactor; 
+
+  if ( spectrometer_option=="HMS"  ){
+
+          if (targType=="He03"  && angle==20) { a = 2.770 ;  b = -2.543 ;   }
+          if (targType=="He04"  && angle==20) { a = 2.573 ;  b = -2.377 ;   }
+	  if (targType=="Li06"  && angle==20) { a = 1.973 ;  b = -2.353 ;   }
+	  if (targType=="Li07"  && angle==20) { a = 2.118 ;  b = -2.434 ;   }
+	  if (targType=="Be09"  && angle==20) { a = 2.207 ;  b = -2.319 ;   }
+	  if (targType=="BC10"  && angle==20) { a = 1.942 ;  b = -2.269 ;   }
+	  if (targType=="BC11"  && angle==20) { a = 1.971 ;  b = -2.277 ;   }
+	  if (targType=="Al27"  && angle==20) { a = 1.949 ;  b = -2.225 ;   }
+	  if (targType=="Fe54"  && angle==20) { a = 1.877 ;  b = -2.136 ;   }
+	  if (targType=="Ni58"  && angle==20) { a = 1.679 ;  b = -2.146 ;   }
+	  if (targType=="Cu63"  && angle==20) { a = 2.453 ;  b = -2.065 ;   }
+	  if (targType=="Ni64"  && angle==20) { a = 1.652 ;  b = -2.136 ;   }
+	  if (targType=="Ag10"  && angle==20) { a = 2.215 ;  b = -2.060 ;   }
+	  if (targType=="Sn11"  && angle==20) { a = 1.195 ;  b = -1.671 ;   }
+	  if (targType=="Au19"  && angle==20) { a = 2.009 ;  b = -2.051 ;   }
+	  if (targType=="Th23"  && angle==20) { a = 2.143 ;  b = -2.045 ;   }
+          if (targType=="Ca12"  && angle==20) { a = 1.907 ;  b = -2.242 ;   }
+	  if (targType=="Ca12"  && angle==26) { a = 2.628 ;  b = -2.820 ;   }
+	  if (targType=="Ca12"  && angle==35) { a = 3.185 ;  b = -3.452 ;   }
+          if (targType=="Ca40"  && angle==20) { a = 2.378 ;  b = -2.154 ;   }
+          if (targType=="Ca40"  && angle==26) { a = 2.833 ;  b = -2.535 ;   }
+          if (targType=="Ca40"  && angle==35) { a = 3.443 ;  b = -3.054 ;   }
+          if (targType=="Ca48"  && angle==20) { a = 2.450 ;  b = -2.150 ;   }
+          if (targType=="Ca48"  && angle==35) { a = 3.391 ;  b = -2.949 ;   }
+	  if (targType=="LD2"   && angle==20) { a = 2.983 ;  b = -2.508 ;   }
+	  if (targType=="LD2"   && angle==26) { a = 3.711 ;  b = -3.221 ;   }
+	  if (targType=="LD2"   && angle==35) { a = 4.257 ;  b = -4.120 ;   }
+	  if (targType=="Dummy" && angle==20) { a = 1.768 ;  b = -2.183 ;   }
+	  if (targType=="Dummy" && angle==26) { a = 2.480 ;  b = -2.739 ;   }
+	  if (targType=="Dummy" && angle==35) { a = 3.104 ;  b = -3.353 ;   }
+  }
+  R = TMath::Exp(a+b*Ep);
+  finalFactor=(1.0/(1.0+R)) ; 
+  cout<< targType << " , " << spectrometer_option << " , " << angle << " CSB! Ep:" << Ep << " and FinalFactor is : "<< finalFactor <<  " , and R is " << R<<  " , and a and b are: "<< a << " , "<< b << endl;
+  return finalFactor;
+}
+
 double weight_ytar_corr(double ytar , TString spectrometer_option){
 double weight;
 if ( spectrometer_option=="HMS") { weight =  -0.00812174*ytar*ytar - 0.0000415678*ytar+1.00021;}
@@ -128,6 +172,39 @@ if ( spectrometer_option=="HMS") { weight =  TMath::Sqrt(1+xptar*xptar + yptar*y
 else if ( spectrometer_option=="SHMS") { weight = 1.0;}
 double final_weight = 1.0/weight;
 return final_weight;
+
+}
+
+double weight_delta_corr_Dave(double delta ,  TString spectrometer_option) {
+  // this is applied as a weight to the MC, rather than a redefinition of the delta variable
+  double delta_corr=1.0;
+  double deltatmp;
+  if (delta > 8.0) {
+    deltatmp = 8.0;
+  } else if (delta < -8.0) {
+    deltatmp = -8.0;
+  } else {
+    deltatmp = delta;
+  }
+
+
+  double h1 = 1.0069;
+  double h2 = 0.34018e-02;
+  double h3 = -0.71161e-03;
+  double h4 = -0.12060e-04;
+  double h5 = 0.11322e-04;
+  double h6 = -0.78222e-06;
+
+  if ( spectrometer_option=="HMS") { 
+
+    delta_corr =  h1 + h2 * deltatmp + h3 * TMath::Power(deltatmp, 2) 
+                + h4 * TMath::Power(deltatmp, 3) 
+                + h5 * TMath::Power(deltatmp, 4) 
+                + h6 * TMath::Power(deltatmp, 5);
+}
+  else if ( spectrometer_option=="SHMS") { delta_corr = 1.0;}
+
+  return delta_corr;
 
 }
 
@@ -165,29 +242,30 @@ void plotHistograms_Dummy(TH1F* X_Data_LT, TH1F* X_Data_LT_Dummy,  TString out_n
 void plotHistograms_Contamination(TH1F* X_Data_ST, TH1F* X_Data_ST_tmp,  TString out_name);
 std::vector<ScaleFactors> run_data_LT , run_data_ST , run_data_LT_Dummy , run_data_ST_tmp; // run_data_ST_tmp is for contamination subtraction (Ca48 , B10 B11 targets)   
 
-void cross_Sections_updated_workingProcess (const char* target_in = "Ca12", const char* angle_in = "20", const char* momentum_spec_in = "2p42", TString spectrometer_option="HMS" , TString ytarg_corr_opt ="ON", TString jacob_corr_opt ="ON" , TString delta_corr_opt="ON" ) {
+void cross_Sections_updated_workingProcess (const char* target_in = "Ca12", const char* angle_in = "20", const char* momentum_spec_in = "2p42", TString spectrometer_option="HMS" , TString ytarg_corr_opt ="ON", TString jacob_corr_opt ="ON" , TString delta_corr_opt="ON" , TString CSB_corr_opt="ON" ) {
 
   TString target_input        = target_in;
   TString angle_input         = angle_in;
   TString momentum_spec_input = momentum_spec_in;
   TString spectrometer        = spectrometer_option;
-  cout<<__LINE__<<endl;
-  bool ytar_corr_ON , MC_Jacobian_corr_ON , delta_corr_ON , Coulomb_corr_ON ; 
+
+  bool ytar_corr_ON , MC_Jacobian_corr_ON , delta_corr_ON , Coulomb_corr_ON , CSB_corr_ON; 
   if (ytarg_corr_opt =="ON"){ytar_corr_ON        = true ; }       else {ytar_corr_ON        = false;}
   if (jacob_corr_opt =="ON"){MC_Jacobian_corr_ON = true ; }       else {MC_Jacobian_corr_ON = false;}
   if (delta_corr_opt =="ON"){delta_corr_ON       = true ; }       else {delta_corr_ON       = false;}
+  if (CSB_corr_opt   =="ON"){CSB_corr_ON         = true ; }       else {CSB_corr_ON         = false;}
 
   TString spectrometer_lowercase;
   if (      spectrometer=="HMS" || spectrometer=="test") {spectrometer_lowercase = "hms";}
   else if ( spectrometer=="SHMS")                        {spectrometer_lowercase = "shms";}
-  cout<<__LINE__<<endl;
+
   TString f_st_mc_st , f_lt_mc_st  ,mc_file_lt_st , mc_file_st_st  ; 
   double angle , p_spec , AM_ST;
   int delta_hi , delta_lo;
   double density_ST, length_ST  ;
 
   cout << "SPECTROMETER: "<<spectrometer<<endl;
-  cout<<__LINE__<<endl;
+
     angle=angle_input.Atof();
     //  angle=20.005;
   if  ( spectrometer=="test" ){
@@ -519,10 +597,12 @@ if(st_vars_data.ptardp > cuts_delta_min_st && st_vars_data.ptardp < cuts_delta_m
       else if (spectrometer=="SHMS"){thetarad= TMath::ACos((cos(theta_central) - st_vars_data.ptarph*sin(theta_central))/TMath::Sqrt(1. + st_vars_data.ptarph*st_vars_data.ptarph+st_vars_data.ptarth*st_vars_data.ptarth));      }
       
       double thetadeg = thetarad*(180.0/3.14);                   
-      double weight_F2 , var_x_axis;
+      double weight_F2 , var_x_axis ;
       if (var_dep=="delta")  { var_x_axis = st_vars_data.ptardp; }
       else if (var_dep=="xb"){ var_x_axis = deltaToX( st_vars_data.ptardp , p_spec , Einitial , angle);  }
       if (F2_option) { weight_F2 = weight_calculateF2( thetadeg ,  Eprime ,  Einitial)               ;}      else {  weight_F2 =1.0;}
+
+
 		X_tmp->Fill( var_x_axis  , weight_F2   );
 
       		}
@@ -565,8 +645,8 @@ if(st_vars_data.ptardp > cuts_delta_min_st && st_vars_data.ptardp < cuts_delta_m
 		    double weight_F2  , var_x_axis;
 		    if (var_dep=="delta")  { var_x_axis = lt_vars_data.ptardp;  }
 		    else if (var_dep=="xb"){ var_x_axis = deltaToX( lt_vars_data.ptardp , p_spec , Einitial , angle);  }
-		    if (F2_option) { weight_F2 = weight_calculateF2( thetadeg ,  Eprime ,  Einitial)               ;}
-		    else { weight_F2 =1.0;}
+		    if (F2_option) { weight_F2 = weight_calculateF2( thetadeg ,  Eprime ,  Einitial)            ;}      else { weight_F2 =1.0;}
+
 	      	X_tmp->Fill( var_x_axis , weight_F2 );
       		}
     	}
@@ -610,8 +690,7 @@ if(st_vars_data.ptardp > cuts_delta_min_st && st_vars_data.ptardp < cuts_delta_m
 	     double weight_F2 , var_x_axis;
 	     if (var_dep=="delta")  { var_x_axis = lt_vars_data_Dummy.ptardp;  }
 	     else if (var_dep=="xb"){ var_x_axis = deltaToX( lt_vars_data_Dummy.ptardp , p_spec , Einitial , angle);  }
-	     if (F2_option) {  weight_F2 = weight_calculateF2( thetadeg ,  Eprime ,  Einitial)               ;}
-	     else { weight_F2 =1.0;}
+	     if (F2_option) {  weight_F2 = weight_calculateF2( thetadeg ,  Eprime ,  Einitial)               ;}	     else { weight_F2 =1.0;}
 	     	     
 	     X_tmp->Fill(var_x_axis, weight_F2);
 
@@ -705,8 +784,8 @@ if(st_vars_data.ptardp > cuts_delta_min_st && st_vars_data.ptardp < cuts_delta_m
       float dummy_upstream   = 0.240;       //  g/(cm^2)                    
       float dummy_downstream = 0.236;       //  g/(cm^2) 
       thickness_dummy = (dummy_upstream + dummy_downstream)/2;   // g/(cm^2), average of dummy upstream and downstream                                           
-      R =  (thickness_LD2*0.996 )/ thickness_dummy; // 0.996 cryo target contraction factor
-      X_Data_LT_Dummy->Scale(R);
+      R =  (thickness_LD2 )/ thickness_dummy; // 0.996 cryo target contraction factor NOT USED FOR DUMMY
+      //X_Data_LT_Dummy->Scale(R); we scale later, just in case we do CSB
 
       double R_tmp ; 
       if (target_input=="Ca48") {  R_tmp = 0.113 ; X_Data_ST_tmp->Scale(R_tmp); }
@@ -756,19 +835,19 @@ if(st_vars_data.ptardp > cuts_delta_min_st && st_vars_data.ptardp < cuts_delta_m
 	  if (F2_option) { weight_F2 = weight_calculateF2( thetadeg ,  Eprime ,  Einitial)               ;}
 	  else {weight_F2 = 1.0;}
 	  
-	  double weight_ytarCorr , weight_MC_JacobianCorr , delta_new;
+	  double weight_ytarCorr , weight_MC_JacobianCorr , weight_delta;
 	  
 	  if (ytar_corr_ON){weight_ytarCorr = weight_ytar_corr( lt_vars_mc.hpsytar , spectrometer);}
 	  else weight_ytarCorr=1.0;
 	  if (MC_Jacobian_corr_ON){weight_MC_JacobianCorr = weight_MC_Jacobian_corr ( lt_vars_mc.hpsxptar   , lt_vars_mc.hpsyptar,  spectrometer  );}
 	  else weight_MC_JacobianCorr=1.0;
-	  if (delta_corr_ON) {delta_new = weight_delta_corr(lt_vars_mc.hsdp , spectrometer );}
-	  else delta_new = lt_vars_mc.hsdp;
+	  if (delta_corr_ON) {weight_delta = weight_delta_corr_Dave(lt_vars_mc.hsdp , spectrometer );}
+	  else weight_delta = 1.0;
 	  double var_x_axis;
-	  if      (var_dep=="delta")  { var_x_axis = delta_new;  }
-	  else if (var_dep=="xb"   )  { var_x_axis = deltaToX( delta_new , p_spec , Einitial , angle);  }
+	  if      (var_dep=="delta")  { var_x_axis = lt_vars_mc.hsdp;  }
+	  else if (var_dep=="xb"   )  { var_x_axis = deltaToX( lt_vars_mc.hsdp , p_spec , Einitial , angle);  }
 	  
-	  if (  delta_new < cuts_delta_max_lt_mc && delta_new > cuts_delta_min_lt_mc     ){	  X_MC_LT->Fill( var_x_axis,weight*weight_F2*weight_ytarCorr*weight_MC_JacobianCorr );   } 
+	  if (  lt_vars_mc.hsdp < cuts_delta_max_lt_mc && lt_vars_mc.hsdp > cuts_delta_min_lt_mc     ){	  X_MC_LT->Fill( var_x_axis,weight*weight_F2*weight_ytarCorr*weight_MC_JacobianCorr*weight_delta );   } 
 	  
 	  hsdp_values_LT.push_back(lt_vars_mc.hsdp);
 	  weight_values_LT.push_back(weight);
@@ -816,19 +895,19 @@ if(st_vars_data.ptardp > cuts_delta_min_st && st_vars_data.ptardp < cuts_delta_m
 	  if (F2_option) { weight_F2 = weight_calculateF2( thetadeg ,  Eprime ,  Einitial)               ;}
 	  else {weight_F2 = 1.0;}
 	  
-	  double weight_ytarCorr , weight_MC_JacobianCorr , delta_new;
+	  double weight_ytarCorr , weight_MC_JacobianCorr , weight_delta;
 	  
 	  if (ytar_corr_ON){weight_ytarCorr = weight_ytar_corr( st_vars_mc.hpsytar , spectrometer);}
 	  else weight_ytarCorr=1.0;
 	  if (MC_Jacobian_corr_ON){weight_MC_JacobianCorr = weight_MC_Jacobian_corr ( st_vars_mc.hpsxptar   , st_vars_mc.hpsyptar,  spectrometer  );}
 	  else weight_MC_JacobianCorr=1.0;
-	  if (delta_corr_ON) {delta_new = weight_delta_corr(st_vars_mc.hsdp , spectrometer );}
-	  else delta_new = st_vars_mc.hsdp;
+	  if (delta_corr_ON) {weight_delta = weight_delta_corr_Dave(st_vars_mc.hsdp , spectrometer );}
+	  else weight_delta = 1.0;
           double var_x_axis;
-          if      (var_dep=="delta")  { var_x_axis = delta_new;  }
-          else if (var_dep=="xb"   )  { var_x_axis = deltaToX( delta_new , p_spec , Einitial , angle);  }
+          if      (var_dep=="delta")  { var_x_axis = st_vars_mc.hsdp;  }
+          else if (var_dep=="xb"   )  { var_x_axis = deltaToX( st_vars_mc.hsdp , p_spec , Einitial , angle);  }
 	  //cout << "MC var_x_axis: " << var_x_axis << endl;
-	  if ( delta_new < cuts_delta_max_st_mc && delta_new > cuts_delta_min_st_mc  ){X_MC_ST->Fill( var_x_axis , weight*weight_F2*weight_ytarCorr*weight_MC_JacobianCorr );}
+	  if ( st_vars_mc.hsdp < cuts_delta_max_st_mc && st_vars_mc.hsdp > cuts_delta_min_st_mc  ){X_MC_ST->Fill( var_x_axis , weight*weight_F2*weight_ytarCorr*weight_MC_JacobianCorr*weight_delta );}
 	  
 	  hsdp_values_ST.push_back(st_vars_mc.hsdp);
 	  weight_values_ST.push_back(weight);
@@ -865,6 +944,68 @@ if(st_vars_data.ptardp > cuts_delta_min_st && st_vars_data.ptardp < cuts_delta_m
 
       if (target_input=="Ca48" || target_input=="BC10" || target_input=="BC11") {      X_Data_ST->Add(X_Data_ST_tmp, -1); }  
 
+
+
+      // APPLYING CSB CORRECTION
+      TH1F* h_X_CSB_corr_ST_dp       = new TH1F("h_X_CSB_corr_ST", "h_X_CSB_corr_ST", X_Data_ST->GetNbinsX(), X_Data_ST->GetXaxis()->GetXmin(), X_Data_ST->GetXaxis()->GetXmax());
+      TH1F* h_X_CSB_corr_LT_dp       = new TH1F("h_X_CSB_corr_LT", "h_X_CSB_corr_LT", X_Data_LT->GetNbinsX(), X_Data_LT->GetXaxis()->GetXmin(), X_Data_LT->GetXaxis()->GetXmax());
+      TH1F* h_X_CSB_corr_LT_Dummy_dp = new TH1F("h_X_CSB_corr_LT_Dummy", "h_X_CSB_corr_LT_Dummy", X_Data_LT_Dummy->GetNbinsX(), X_Data_LT_Dummy->GetXaxis()->GetXmin(), X_Data_LT_Dummy->GetXaxis()->GetXmax());
+
+      for (int i = 1; i <= X_Data_ST->GetNbinsX(); ++i) {
+	double binContent        = X_Data_ST->GetBinContent(i);
+	double binError          = X_Data_ST->GetBinError(i);
+	double binCenter         = X_Data_ST->GetBinCenter(i);
+	double Eprime            = p_spec*(1+0.01*binCenter)  ;
+	double theta_central_deg = theta_central * 180.0/3.141592 ;
+	double weight            = weight_CSB_corr(target_input, spectrometer_option, angle, Eprime) ;
+	double updatedValue      = binContent * weight;
+	cout << "for ST , CSB corr: weight is " << weight <<endl;
+	h_X_CSB_corr_ST_dp->SetBinContent(i, updatedValue);
+	h_X_CSB_corr_ST_dp->SetBinError(i, binError * weight);
+
+      }
+
+      for (int i = 1; i <= X_Data_LT->GetNbinsX(); ++i) {
+	double binContent        = X_Data_LT->GetBinContent(i);
+	double binError          = X_Data_LT->GetBinError(i);
+	double binCenter         = X_Data_LT->GetBinCenter(i);
+	double Eprime            = p_spec*(1+0.01*binCenter)  ;
+	double theta_central_deg = theta_central * 180.0/3.141592 ;
+	double weight            = weight_CSB_corr( "LD2", spectrometer_option, angle, Eprime) ;
+	double updatedValue      = binContent * weight;
+	h_X_CSB_corr_LT_dp->SetBinContent(i, updatedValue);
+        h_X_CSB_corr_LT_dp->SetBinError(i, binError * weight);
+
+      }
+
+
+      for (int i = 1; i <= X_Data_LT_Dummy->GetNbinsX(); ++i) {
+	double binContent        = X_Data_LT_Dummy->GetBinContent(i);
+	double binError          = X_Data_LT_Dummy->GetBinError(i);
+	double binCenter         = X_Data_LT_Dummy->GetBinCenter(i);
+	double Eprime            = p_spec*(1+0.01*binCenter)  ;
+	double theta_central_deg = theta_central * 180.0/3.141592 ;
+	double weight            = weight_CSB_corr( "Dummy", spectrometer_option, angle, Eprime) ;
+	double updatedValue      = binContent * weight;
+        h_X_CSB_corr_LT_Dummy_dp->SetBinContent(i, updatedValue);
+        h_X_CSB_corr_LT_Dummy_dp->SetBinError(i, binError * weight);
+
+      }
+
+
+	if (CSB_corr_ON) {
+	  X_Data_ST->Reset();
+	  X_Data_LT->Reset();
+	  X_Data_LT_Dummy->Reset();	
+
+	  X_Data_ST->Add(h_X_CSB_corr_ST_dp);
+	  X_Data_LT->Add(h_X_CSB_corr_LT_dp);
+	  X_Data_LT_Dummy->Add(h_X_CSB_corr_LT_Dummy_dp);  
+	}
+
+
+
+  X_Data_LT_Dummy->Scale(R);
   X_Data_ST->Divide(X_MC_ST);
   X_Data_LT->Add(X_Data_LT_Dummy, -1); // performing dummy subtraction
   X_Data_LT->Divide(X_MC_LT);
@@ -945,14 +1086,14 @@ if(st_vars_data.ptardp > cuts_delta_min_st && st_vars_data.ptardp < cuts_delta_m
 
 
 int main(int argc, char** argv) {
-  if (argc != 8) {
-    std::cerr << "Usage: " << argv[0] << " <target_input> <angle_input> <momentum_spec_input> <spectrometer> <ytar_corr> <MCJacobian_corr> <delta_corr>" << std::endl;
-    std::cerr << "Example: " << argv[0] << " Ca12 20 2p420 HMS ON ON ON" << std::endl;
-    std::cerr << "Example of a TEST case: " << argv[0] << " Ca12 20 5p870 test ON ON ON" << std::endl;
+  if (argc != 9) {
+    std::cerr << "Usage: " << argv[0] << " <target_input> <angle_input> <momentum_spec_input> <spectrometer> <ytar_corr> <MCJacobian_corr> <delta_corr> <CSB_corr>" << std::endl;
+    std::cerr << "Example: " << argv[0] << " Ca12 20 2p420 HMS ON ON ON ON" << std::endl;
+    std::cerr << "Example of a TEST case: " << argv[0] << " Ca12 20 5p870 test ON ON ON ON" << std::endl;
     return 1;
   }
 
-  cross_Sections_updated_workingProcess(argv[1], argv[2], argv[3], argv[4] , argv[5], argv[6], argv[7] );
+  cross_Sections_updated_workingProcess(argv[1], argv[2], argv[3], argv[4] , argv[5], argv[6], argv[7],argv[8] );
   return 0;
 }
  
