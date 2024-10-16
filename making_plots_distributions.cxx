@@ -14,10 +14,10 @@
   //if (Case=="HMS")  file="/work/smoran/xem2/data/HMS/hms_replay_production_4970_-1.root"; //2.71
   //  if (Case=="HMS")  file="/work/smoran/xem2/data/HMS/hms_replay_production_5005_-1.root"; //2.42
 
-  TString run= "5876" ; 
+  TString run= "4903" ; 
   if (Case=="HMS")  file= (const char*)Form("/work/smoran/xem2/data/HMS/hms_replay_production_%s_-1.root", (const char*)run);
 
-  const Double_t p_spec        = 3.4; // in GeV, it is the central momentum
+  const Double_t p_spec        = 3.81; // in GeV, it is the central momentum
 
   TFile *f = new TFile((const char*)file);
   TTree *TSP, *TSH;
@@ -79,7 +79,7 @@
 }
 
  TCanvas *c= new TCanvas("c","assigment4");
-  c->Divide(2,1);
+ //c->Divide(2,1);
  Int_t nbins=170;
 
  TH1F *Q2_h = new TH1F("Q2", "Q2" , nbins, 0,2.5);
@@ -95,13 +95,14 @@
  TH2F *Xb_comp = new TH2F("Xb_comp","Xb cal v/s Xb tree"    ,nbins,0,10,nbins,0,10);
  TH2F *W_comp  = new TH2F("W_comp","W cal v/s W tree"       ,nbins,0,10,nbins,0,10);
  TH2F *nu_comp = new TH2F("nu_comp","nu cal v/s nu tree"    ,nbins,0,20,nbins,0,45);
+ TH2F *xytar_comp = new TH2F("xytar_comp","xtar v/s ytar"    ,nbins,-15,15,nbins,-15,15);
+
 
  Q2_h->GetXaxis()->SetTitle("cal.etottracknorm");
  Xb_h->GetXaxis()->SetTitle("Xbj");
  W_h->GetXaxis()->SetTitle("W");
  nu_h->GetXaxis()->SetTitle("nu");
  tmp->GetXaxis()->SetTitle("AvgCurr");
-
 
  Q2_h->GetYaxis()->SetTitle("counts");
  Xb_h->GetYaxis()->SetTitle("counts");
@@ -117,6 +118,8 @@
  W_comp->GetYaxis()->SetTitle("W tree");
  nu_comp->GetXaxis()->SetTitle("nu calc");
  nu_comp->GetYaxis()->SetTitle("nu tree");
+ xytar_comp->GetXaxis()->SetTitle("Ytar");
+ xytar_comp->GetYaxis()->SetTitle("Xtar");
 
  Long64_t nentries = T->GetEntries();
  for (int i=0;i<nentries;i++){
@@ -133,12 +136,12 @@
    Double_t delta   = ptardp ; 
    //   if (abs(ptardp) && Cal>0.7 &&  ngcer>2 && abs(xptar)<0.085 && abs(yptar)<0.032  ){
    if (true) {
-   ecal_h->Fill(Cal);
+     /*   ecal_h->Fill(Cal);
    cer_h->Fill(ngcer);
    xfp_h->Fill(xfp);
    Xb_h->Fill(Xb_calc);
-   tmp->Fill(AvgCurr);
-
+   tmp->Fill(AvgCurr);*/
+   xytar_comp->Fill( ytar,xtar );
  }
   }
 
@@ -221,18 +224,6 @@
 
 
 
-
-
-
-
-
-
-
-
-
-
-
-
  Double_t min=0.01;
  Q2_h->SetMinimum(min);
  Xb_h->SetMinimum(min);
@@ -279,22 +270,14 @@
 
  //  c->cd(1); c_1->SetLogy(); Q2_h->Draw(); 
  //  c->cd(2);  
- c->cd(1);
- c_1->SetLogy();
- Q2_h->SetLineWidth(2);
- Q2_h->Draw();
- Xb_h->SetLineColor(kRed);
- Xb_h->SetLineWidth(2);
- Xb_h->Draw("same");
- W_h->SetLineColor(kGreen);
- W_h->SetLineWidth(2);
- W_h->Draw("same");
- nu_h->SetLineColor(kBlack);
- nu_h->SetLineWidth(2);
- nu_h->Draw("same");
- c->cd(2);
- c_2->SetLogy();
- tmp->Draw();
+ xytar_comp->Draw("COLZ");
+
+
+
+
+
+
+
  /*
 Q2_comp->Draw("colz");
 

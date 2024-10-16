@@ -37,7 +37,7 @@ const double length_LT      = 10.0;          //Has cm units
 const double sim_charge_ST  = 1.;            //Has uC units 
 const double sim_charge_LT  = 1.;            //Has uC units 
 const double AM_LT          = 2.0;
-const int    N_BINS         = 80;
+const int    N_BINS         = 40;
 const double TOLERANCE      = 1e-8;
 const bool   F2_option      = false;        // it should be false always, calculating F2 event by event is not the right approach
 const char* var_dep         = "delta";      // delta or xb
@@ -74,6 +74,7 @@ struct Variables {
   double decal;
   double npeSum;
   double AvgCurr;
+  double CurrentFlag;
 };
 
 struct ScaleFactors {
@@ -84,6 +85,8 @@ struct ScaleFactors {
   double Eff_Elec_LiveTime;
   double Eff_Comp_LiveTime;
   double trigger ; 
+  double cal_eff;
+  double cer_eff;
 };
 
 void fillScaleFactors(const TString& table_file, 
@@ -175,6 +178,188 @@ return final_weight;
 
 }
 
+
+double weight_Isoscalar_corr(double Xb , double Q2 , int N , int Z) {
+
+    double xtab[] = {
+      0.010, 0.020, 0.030, 0.040, 0.050, 0.060, 0.070, 0.080, 0.090,
+      0.100, 0.110, 0.120, 0.130, 0.140, 0.150, 0.160, 0.170, 0.180,
+      0.190, 0.200, 0.210, 0.220, 0.230, 0.240, 0.250, 0.260, 0.270,
+      0.280, 0.290, 0.300, 0.310, 0.320, 0.330, 0.340, 0.350, 0.360,
+      0.370, 0.380, 0.390, 0.400, 0.410, 0.420, 0.430, 0.440, 0.450,
+      0.460, 0.470, 0.480, 0.490, 0.500, 0.510, 0.520, 0.530, 0.540,
+      0.550, 0.560, 0.570, 0.580, 0.590, 0.600, 0.610, 0.620, 0.630,
+      0.640, 0.650, 0.660, 0.670, 0.680, 0.690, 0.700, 0.710, 0.720,
+      0.730, 0.740, 0.750, 0.760, 0.770, 0.780, 0.790, 0.800, 0.810,
+      0.820, 0.830, 0.840, 0.850, 0.860, 0.870, 0.880, 0.890, 0.900,
+      0.910, 0.920, 0.930, 0.940, 0.950, 0.960, 0.970, 0.980, 0.990, 1.000
+    };
+
+    double q2tab[] = {
+      1.0, 2.0, 3.0, 4.0, 5.0, 6.0, 7.0, 8.0, 10.0, 15.0
+    };
+
+    double nonp[100][10] = { 
+      {0.983509,0.967562,0.952133,0.937198,0.922738,0.908734,0.895167,0.882020,0.869275,0.856917},
+      {0.844931,0.833300,0.822010,0.811048,0.800401,0.790055,0.779999,0.770222,0.760711,0.751457},
+      {0.742449,0.733679,0.725136,0.716812,0.708699,0.700790,0.693076,0.685551,0.678208,0.671042},
+      {0.664041,0.657206,0.650530,0.644006,0.637628,0.631395,0.625297,0.619336,0.613508,0.607788},
+      {0.602222,0.596735,0.591388,0.586151,0.581032,0.575976,0.571070,0.566249,0.561505,0.556859},
+      {0.552326,0.547884,0.543518,0.539216,0.535019,0.530865,0.526926,0.522888,0.518921,0.515048},
+      {0.511480,0.507615,0.504017,0.500443,0.497119,0.493618,0.490066,0.486863,0.483462,0.480752},
+      {0.477100,0.473876,0.471597,0.468325,0.465172,0.463005,0.459858,0.457916,0.452807,0.450750},
+      {0.451604,0.446949,0.438826,0.443575,0.444461,0.436106,0.428253,0.432000,0.436110,0.426526},
+      {0.417893,0.421976,0.433359,0.412051,0.425995,0.426235,0.414856,0.419595,0.414556,0.457513},
+        
+      {0.983509,0.967559,0.952119,0.937164,0.922671,0.908618,0.894987,0.881756,0.868907,0.856424},
+      {0.844289,0.832487,0.821001,0.809819,0.798926,0.788308,0.777955,0.767855,0.757995,0.748366},
+      {0.738959,0.729762,0.720769,0.711970,0.703358,0.694925,0.686665,0.678569,0.670634,0.662851},
+      {0.655216,0.647724,0.640369,0.633148,0.626055,0.619087,0.612238,0.605507,0.598888,0.592381},
+      {0.585978,0.579676,0.573483,0.567381,0.561373,0.555459,0.549643,0.543901,0.538247,0.532687},
+      {0.527185,0.521772,0.516424,0.511157,0.505953,0.500826,0.495763,0.490746,0.485828,0.480940},
+      {0.476151,0.471344,0.466696,0.462116,0.457552,0.452952,0.448466,0.444209,0.439813,0.435568},
+      {0.431184,0.427269,0.423081,0.419041,0.415156,0.410801,0.407098,0.403425,0.400097,0.395570},
+      {0.391607,0.389038,0.386063,0.381268,0.377802,0.374977,0.371842,0.368327,0.364838,0.362433},
+      {0.360181,0.353288,0.355565,0.350272,0.353403,0.343797,0.356637,0.354206,0.348619,0.313281},
+        
+      {0.983510,0.967561,0.952118,0.937157,0.922654,0.908587,0.894934,0.881676,0.868794,0.856270},
+      {0.844086,0.832226,0.820675,0.809418,0.798441,0.787732,0.777276,0.767064,0.757083,0.747323},
+      {0.737774,0.728427,0.719272,0.710302,0.701508,0.692884,0.684421,0.676114,0.667956,0.659941},
+      {0.652064,0.644319,0.636702,0.629208,0.621833,0.614572,0.607422,0.600379,0.593440,0.586600},
+      {0.579859,0.573212,0.566655,0.560190,0.553808,0.547511,0.541293,0.535154,0.529089,0.523092},
+      {0.517166,0.511309,0.505516,0.499776,0.494105,0.488500,0.482945,0.477457,0.472016,0.466636},
+      {0.461332,0.456062,0.450841,0.445676,0.440586,0.435560,0.430543,0.425598,0.420714,0.415880},
+      {0.411154,0.406366,0.401623,0.397016,0.392580,0.388002,0.383386,0.379056,0.374824,0.370799},
+      {0.366380,0.361443,0.357684,0.354736,0.350574,0.345649,0.342257,0.339736,0.333568,0.331548},
+      {0.328415,0.326729,0.320067,0.318466,0.316831,0.318958,0.307941,0.306496,0.314458,0.341841},
+        
+      {0.983511,0.967562,0.952118,0.937155,0.922648,0.908574,0.894911,0.881641,0.868742,0.856198},
+      {0.843990,0.832102,0.820519,0.809225,0.798207,0.787451,0.776944,0.766676,0.756634,0.746807},
+      {0.737187,0.727763,0.718526,0.709468,0.700581,0.691858,0.683291,0.674874,0.666600,0.658464},
+      {0.650460,0.642582,0.634826,0.627188,0.619662,0.612245,0.604933,0.597723,0.590610,0.583591},
+      {0.576664,0.569826,0.563074,0.556404,0.549815,0.543304,0.536865,0.530498,0.524198,0.517961},
+      {0.511786,0.505672,0.499617,0.493619,0.487675,0.481789,0.475957,0.470175,0.464451,0.458773},
+      {0.453154,0.447575,0.442062,0.436587,0.431165,0.425793,0.420489,0.415204,0.409975,0.404812},
+      {0.399690,0.394627,0.389593,0.384685,0.379695,0.374906,0.370107,0.365316,0.360556,0.355935},
+      {0.351579,0.346887,0.342370,0.337866,0.334286,0.329150,0.324774,0.321725,0.318475,0.312829},
+      {0.310749,0.309096,0.300508,0.302876,0.296301,0.297655,0.289021,0.289589,0.293994,0.314936},
+        
+      {0.983511,0.967564,0.952119,0.937155,0.922645,0.908567,0.894900,0.881622,0.868714,0.856158},
+      {0.843936,0.832031,0.820429,0.809113,0.798070,0.787287,0.776750,0.766448,0.756369,0.746503},
+      {0.736840,0.727370,0.718083,0.708972,0.700029,0.691246,0.682616,0.674131,0.665787,0.657576},
+      {0.649494,0.641535,0.633694,0.625966,0.618348,0.610834,0.603421,0.596106,0.588885,0.581754},
+      {0.574711,0.567753,0.560876,0.554079,0.547357,0.540709,0.534130,0.527617,0.521165,0.514775},
+      {0.508440,0.502162,0.495938,0.489768,0.483649,0.477581,0.471566,0.465599,0.459680,0.453810},
+      {0.447989,0.442215,0.436491,0.430812,0.425180,0.419597,0.414061,0.408569,0.403131,0.397743},
+      {0.392384,0.387107,0.381856,0.376672,0.371528,0.366410,0.361420,0.356439,0.351487,0.346606},
+      {0.341924,0.337194,0.332407,0.327782,0.323699,0.319170,0.314455,0.310125,0.307215,0.301642},
+      {0.298502,0.295424,0.289368,0.289307,0.284499,0.280933,0.277798,0.277803,0.280455,0.284791},
+        
+      {0.983512,0.967565,0.952120,0.937156,0.922644,0.908564,0.894893,0.881610,0.868696,0.856133},
+      {0.843902,0.831987,0.820372,0.809042,0.797983,0.787181,0.776624,0.766300,0.756197,0.746305},
+      {0.736613,0.727111,0.717792,0.708646,0.699665,0.690842,0.682169,0.673640,0.665248,0.656987},
+      {0.648852,0.640838,0.632939,0.625151,0.617470,0.609890,0.602409,0.595023,0.587727,0.580520},
+      {0.573398,0.566357,0.559396,0.552510,0.545697,0.538955,0.532279,0.525664,0.519108,0.512609},
+      {0.506164,0.499771,0.493430,0.487140,0.480898,0.474704,0.468557,0.462460,0.456407,0.450400},
+      {0.444440,0.438524,0.432654,0.426828,0.421050,0.415315,0.409625,0.403984,0.398382,0.392835},
+      {0.387346,0.381878,0.376478,0.371131,0.365850,0.360577,0.355399,0.350270,0.345240,0.340166},
+      {0.335218,0.330465,0.325688,0.320838,0.316225,0.311863,0.307204,0.302922,0.299101,0.294904},
+      {0.290491,0.287610,0.284479,0.279501,0.279012,0.274414,0.273407,0.272938,0.272034,0.276103},
+        
+      {0.983512,0.967566,0.952121,0.937156,0.922644,0.908562,0.894889,0.881603,0.868685,0.856116},
+      {0.843879,0.831956,0.820332,0.808992,0.797922,0.787107,0.776536,0.766196,0.756076,0.746165},
+      {0.736453,0.726930,0.717587,0.708416,0.699408,0.690556,0.681852,0.673291,0.664865,0.656569},
+      {0.648396,0.640342,0.632402,0.624571,0.616843,0.609217,0.601686,0.594248,0.586899,0.579636},
+      {0.572456,0.565356,0.558332,0.551383,0.544504,0.537692,0.530944,0.524256,0.517624,0.511045},
+      {0.504518,0.498042,0.491614,0.485235,0.478903,0.472616,0.466375,0.460178,0.454027,0.447919},
+      {0.441853,0.435834,0.429856,0.423923,0.418031,0.412188,0.406386,0.400631,0.394916,0.389253},
+      {0.383636,0.378070,0.372545,0.367084,0.361686,0.356316,0.351006,0.345767,0.340628,0.335499},
+      {0.330442,0.325487,0.320655,0.315780,0.311117,0.306730,0.302236,0.297676,0.293601,0.289589},
+      {0.285513,0.282426,0.279029,0.274611,0.273444,0.268930,0.269485,0.267128,0.266523,0.270773},
+        
+      {0.983512,0.967567,0.952122,0.937157,0.922644,0.908561,0.894886,0.881598,0.868677,0.856104},
+      {0.843862,0.831934,0.820304,0.808956,0.797877,0.787053,0.776472,0.766120,0.755987,0.746062},
+      {0.736335,0.726796,0.717435,0.708245,0.699217,0.690343,0.681617,0.673032,0.664580,0.656257},
+      {0.648056,0.639972,0.632001,0.624137,0.616375,0.608712,0.601144,0.593668,0.586278,0.578973},
+      {0.571749,0.564604,0.557533,0.550535,0.543605,0.536741,0.529939,0.523194,0.516503,0.509864},
+      {0.503275,0.496734,0.490241,0.483794,0.477391,0.471033,0.464719,0.458448,0.452220,0.446034},
+      {0.439890,0.433788,0.427729,0.421711,0.415736,0.409803,0.403917,0.398072,0.392272,0.386518},
+      {0.380816,0.375159,0.369550,0.363991,0.358501,0.353061,0.347664,0.342349,0.337116,0.331931},
+      {0.326810,0.321788,0.316898,0.312051,0.307267,0.302752,0.298231,0.293810,0.289751,0.285784},
+      {0.281724,0.278268,0.275267,0.271325,0.269301,0.266271,0.266834,0.263387,0.264002,0.267541},
+        
+      {0.983513,0.967568,0.952124,0.937158,0.922645,0.908561,0.894883,0.881592,0.868666,0.856088},
+      {0.843840,0.831904,0.820265,0.808907,0.797817,0.786980,0.776384,0.766016,0.755865,0.745921},
+      {0.736173,0.726611,0.717226,0.708009,0.698953,0.690050,0.681292,0.672672,0.664185,0.655824},
+      {0.647584,0.639458,0.631443,0.623532,0.615723,0.608009,0.600389,0.592857,0.585411,0.578046},
+      {0.570760,0.563550,0.556413,0.549346,0.542345,0.535406,0.528526,0.521701,0.514926,0.508201},
+      {0.501523,0.494891,0.488303,0.481759,0.475257,0.468797,0.462378,0.456000,0.449662,0.443364},
+      {0.437106,0.430889,0.424711,0.418574,0.412477,0.406423,0.400410,0.394441,0.388517,0.382636},
+      {0.376805,0.371023,0.365294,0.359616,0.353994,0.348441,0.342946,0.337513,0.332155,0.326902},
+      {0.321704,0.316604,0.311612,0.306770,0.301954,0.297360,0.292914,0.288574,0.284420,0.280509},
+      {0.277032,0.273768,0.270723,0.267774,0.265423,0.263488,0.263733,0.262517,0.260921,0.264691},
+        
+      {0.983514,0.967570,0.952126,0.937160,0.922646,0.908560,0.894880,0.881584,0.868654,0.856069},
+      {0.843813,0.831867,0.820216,0.808846,0.797740,0.786886,0.776271,0.765882,0.755708,0.745738},
+      {0.735962,0.726370,0.716953,0.707702,0.698609,0.689666,0.680866,0.672202,0.663667,0.655256},
+      {0.646963,0.638781,0.630707,0.622735,0.614861,0.607080,0.599389,0.591784,0.584260,0.576816},
+      {0.569447,0.562150,0.554923,0.547762,0.540664,0.533624,0.526639,0.519704,0.512816,0.505974},
+      {0.499175,0.492418,0.485701,0.479024,0.472386,0.465786,0.459224,0.452699,0.446211,0.439760},
+      {0.433346,0.426969,0.420630,0.414329,0.408066,0.401844,0.395662,0.389523,0.383428,0.377380},
+      {0.371379,0.365430,0.359536,0.353700,0.347925,0.342220,0.336589,0.331033,0.325563,0.320198},
+      {0.314934,0.309777,0.304761,0.299900,0.295185,0.290643,0.286344,0.282260,0.278380,0.274907},
+      {0.271685,0.268766,0.266372,0.264444,0.262996,0.262203,0.261550,0.261707,0.262413,0.261832}
+
+
+
+};
+
+    double f2rat = 1.0;
+    double ISO;
+
+    // Loop over xtab to find the correct range for Xb
+    for (int i = 0; i < 99; i++) {
+      if (Xb >= xtab[i] && Xb < xtab[i + 1]) {
+	double xlo = xtab[i];
+	double xhi = xtab[i + 1];
+	double deltax = xhi - Xb;
+
+	// Loop over q2tab to find the correct range for Q2
+	for (int j = 0; j < 9; j++) {
+	  if (Q2 >= q2tab[j] && Q2 < q2tab[j + 1]) {
+	    double q2lo = q2tab[j];
+	    double q2hi = q2tab[j + 1];
+	    double deltaq2 = q2hi - q2lo;
+
+	    // Linear interpolation between values
+	    double A1 = nonp[i][j];
+	    double A2 = nonp[i + 1][j];
+	    double A3 = nonp[i][j + 1];
+	    double A4 = nonp[i + 1][j + 1];
+
+	    double A12 = (A1 * (xhi - Xb) + A2 * (Xb - xlo)) / deltax;
+	    double A34 = (A3 * (xhi - Xb) + A4 * (Xb - xlo)) / deltax;
+
+	    double A1234 = (A12 * (q2hi - Q2) + A34 * (Q2 - q2lo)) / deltaq2;
+
+	    f2rat = A1234;
+
+	    // Apply John's scale factor
+	    f2rat = (1.0 - 0.013 * log(Q2 / 16.0)) * (1.0 + f2rat) - 1.0;
+
+	    //return f2rat;
+	  }
+	}
+      }
+    }
+    //return f2rat; // Default return if no match found
+    double A =N+Z;
+    ISO= (A/2.0)*( ( 1+f2rat )  / ( Z + N*f2rat )    );
+    return ISO;
+  }
+
+
+
 double weight_delta_corr_Dave(double delta ,  TString spectrometer_option) {
   // this is applied as a weight to the MC, rather than a redefinition of the delta variable
   double delta_corr=1.0;
@@ -242,7 +427,7 @@ void plotHistograms_Dummy(TH1F* X_Data_LT, TH1F* X_Data_LT_Dummy,  TString out_n
 void plotHistograms_Contamination(TH1F* X_Data_ST, TH1F* X_Data_ST_tmp,  TString out_name);
 std::vector<ScaleFactors> run_data_LT , run_data_ST , run_data_LT_Dummy , run_data_ST_tmp; // run_data_ST_tmp is for contamination subtraction (Ca48 , B10 B11 targets)   
 
-void cross_Sections_updated_workingProcess (const char* target_in = "Ca12", const char* angle_in = "20", const char* momentum_spec_in = "2p42", TString spectrometer_option="HMS" , TString ytarg_corr_opt ="ON", TString jacob_corr_opt ="ON" , TString delta_corr_opt="ON" , TString CSB_corr_opt="ON" ) {
+void cross_Sections_updated_workingProcess (const char* target_in = "Ca12", const char* angle_in = "20", const char* momentum_spec_in = "2p42", TString spectrometer_option="HMS" , TString ytarg_corr_opt ="ON", TString jacob_corr_opt ="ON" , TString delta_corr_opt="ON" , TString CSB_corr_opt="ON" , TString shift_collimator_opt="00") {
 
   TString target_input        = target_in;
   TString angle_input         = angle_in;
@@ -260,9 +445,19 @@ void cross_Sections_updated_workingProcess (const char* target_in = "Ca12", cons
   else if ( spectrometer=="SHMS")                        {spectrometer_lowercase = "shms";}
 
   TString f_st_mc_st , f_lt_mc_st  ,mc_file_lt_st , mc_file_st_st  ; 
-  double angle , p_spec , AM_ST;
-  int delta_hi , delta_lo;
+  double angle , p_spec , AM_ST , shift_collimator;
+  int delta_hi , delta_lo , N, Z;
   double density_ST, length_ST  ;
+  if (shift_collimator_opt=="00"){       shift_collimator=0.0 ; }
+  else if (shift_collimator_opt=="p1"){  shift_collimator=-1.0; }  // p1 for +1cm shift, it carries a - just bc of the definition later
+  else if (shift_collimator_opt=="p2"){  shift_collimator=-2.0; }
+  else if (shift_collimator_opt=="p3"){  shift_collimator=-3.0; }
+  else if (shift_collimator_opt=="m1"){  shift_collimator= 1.0; }
+  else if (shift_collimator_opt=="m2"){  shift_collimator= 2.0; }
+
+  double slope = 2.545 ;
+  double vertical_shift = shift_collimator*sqrt(1 + pow(slope, 2));
+
 
   cout << "SPECTROMETER: "<<spectrometer<<endl;
 
@@ -281,12 +476,13 @@ void cross_Sections_updated_workingProcess (const char* target_in = "Ca12", cons
 
 }
 
-  cout<<__LINE__<<endl;
+
   mc_file_st_st = Form("/work/smoran/xem2/cross_sections/EXTERNALS_tables/OUTV3/xem2_emc_rc_%s_22_hms.out" , (const char*)target_input);
 
 
 
   if      (target_input=="He03") {density_ST    = 0.041; length_ST     = 9.9980;  AM_ST         = 3.0;   }
+  else if (target_input=="LH02") {density_ST    = 0.07248;length_ST    = 9.9980;  AM_ST         = 1.0;   }
   else if (target_input=="He04") {density_ST    = 0.1293;length_ST     = 9.9980;  AM_ST         = 4.0;   }
   else if (target_input=="Li06") {density_ST    = 0.463; length_ST     = 0.53347730; AM_ST      = 6.0;   } // modified to get the numbers Dave got for the thickness  
   else if (target_input=="Li07") {density_ST    = 0.540; length_ST     = 0.49272835; AM_ST      = 7.0;   } // modified to get the numbers Dave got for the thickness 
@@ -316,7 +512,7 @@ void cross_Sections_updated_workingProcess (const char* target_in = "Ca12", cons
   TString modified_momentum = momentum_spec_input;
   modified_momentum.ReplaceAll("p", ".");
   p_spec = modified_momentum.Atof();
-  cout<<__LINE__<<endl;
+  //  cout<<__LINE__<<endl;
   fillScaleFactors("run_numbers_info.txt", "LD2"        , angle_input, spectrometer, momentum_spec_input, p_spec,run_data_LT       );
   fillScaleFactors("run_numbers_info.txt", "Dummy"      , angle_input, spectrometer, momentum_spec_input, p_spec,run_data_LT_Dummy );
   fillScaleFactors("run_numbers_info.txt", target_input , angle_input, spectrometer, momentum_spec_input, p_spec,run_data_ST       );
@@ -586,7 +782,7 @@ if(st_vars_data.ptardp > cuts_delta_min_st && st_vars_data.ptardp < cuts_delta_m
    && st_vars_data.ptarph > cuts_ph_min_st    &&   st_vars_data.ptarph < cuts_ph_max_st    
    && st_vars_data.npeSum > cuts_npeSum_st    
    && st_vars_data.ptary  < cuts_ytar_max_st  && st_vars_data.ptary  > cuts_ytar_min_st  && st_vars_data.ptarx < 2.0
-   && st_vars_data.AvgCurr >5.0
+   && st_vars_data.AvgCurr >5.0 && st_vars_data.CurrentFlag ==1
 
   ) {
 		
@@ -598,12 +794,21 @@ if(st_vars_data.ptardp > cuts_delta_min_st && st_vars_data.ptardp < cuts_delta_m
       
       double thetadeg = thetarad*(180.0/3.14);                   
       double weight_F2 , var_x_axis ;
+
       if (var_dep=="delta")  { var_x_axis = st_vars_data.ptardp; }
       else if (var_dep=="xb"){ var_x_axis = deltaToX( st_vars_data.ptardp , p_spec , Einitial , angle);  }
       if (F2_option) { weight_F2 = weight_calculateF2( thetadeg ,  Eprime ,  Einitial)               ;}      else {  weight_F2 =1.0;}
 
-
-		X_tmp->Fill( var_x_axis  , weight_F2   );
+      if (shift_collimator_opt =="00"){ X_tmp->Fill( var_x_axis  , weight_F2   ); }
+      else {  if (abs(166.37*st_vars_data.ptarth) <= (11.645 -shift_collimator) && abs(st_vars_data.ptary + 166.37*st_vars_data.ptarph )<= (4.575 -shift_collimator) &&
+		  (166.37*st_vars_data.ptarth) < (2.545 * (st_vars_data.ptary + 166.37*st_vars_data.ptarph) + (17.4625 - vertical_shift)) &&
+		  (166.37*st_vars_data.ptarth) > ((2.545)*(st_vars_data.ptary + 166.37*st_vars_data.ptarph)  - (17.4625 - vertical_shift)) &&
+		  (166.37*st_vars_data.ptarth) < ((-2.545)*(st_vars_data.ptary + 166.37*st_vars_data.ptarph) + (17.4625 - vertical_shift)) &&
+		  (166.37*st_vars_data.ptarth) > ((-2.545)*(st_vars_data.ptary + 166.37*st_vars_data.ptarph) - (17.4625 - vertical_shift))     ) 
+	        {  
+	              X_tmp->Fill( var_x_axis  , weight_F2   );
+		}       
+            }
 
       		}
     	} // end cycle through ST entries
@@ -635,7 +840,7 @@ if(st_vars_data.ptardp > cuts_delta_min_st && st_vars_data.ptardp < cuts_delta_m
 		    lt_vars_data.ptarth < cuts_th_max_lt    && lt_vars_data.ptarph > cuts_ph_min_lt    &&
 		    lt_vars_data.ptarph < cuts_ph_max_lt    && lt_vars_data.npeSum > cuts_npeSum_lt    &&
 		    lt_vars_data.ptary  < cuts_ytar_max_lt  && lt_vars_data.ptary  > cuts_ytar_min_lt && lt_vars_data.ptarx < 2.0 &&
-		    lt_vars_data.AvgCurr >5.0
+		    lt_vars_data.AvgCurr >5.0  && lt_vars_data.CurrentFlag ==1
 ){
 		    double Eprime =  p_spec*(1+0.01*lt_vars_data.ptardp);
 		    double thetarad;
@@ -647,7 +852,17 @@ if(st_vars_data.ptardp > cuts_delta_min_st && st_vars_data.ptardp < cuts_delta_m
 		    else if (var_dep=="xb"){ var_x_axis = deltaToX( lt_vars_data.ptardp , p_spec , Einitial , angle);  }
 		    if (F2_option) { weight_F2 = weight_calculateF2( thetadeg ,  Eprime ,  Einitial)            ;}      else { weight_F2 =1.0;}
 
-	      	X_tmp->Fill( var_x_axis , weight_F2 );
+		if (shift_collimator_opt =="00"){ X_tmp->Fill( var_x_axis  , weight_F2   ); }
+		else {  if (abs(166.37*lt_vars_data.ptarth) <= (11.645 -shift_collimator) && abs(lt_vars_data.ptary + 166.37*lt_vars_data.ptarph )<= (4.575 -shift_collimator) &&
+			    (166.37*lt_vars_data.ptarth) < (2.545 * (lt_vars_data.ptary + 166.37*lt_vars_data.ptarph) + (17.4625 - vertical_shift)) &&
+			    (166.37*lt_vars_data.ptarth) > ((2.545)*(lt_vars_data.ptary + 166.37*lt_vars_data.ptarph)  - (17.4625 - vertical_shift)) &&
+			    (166.37*lt_vars_data.ptarth) < ((-2.545)*(lt_vars_data.ptary + 166.37*lt_vars_data.ptarph) + (17.4625 - vertical_shift)) &&
+			    (166.37*lt_vars_data.ptarth) > ((-2.545)*(lt_vars_data.ptary + 166.37*lt_vars_data.ptarph) - (17.4625 - vertical_shift))     )
+		    {
+                      X_tmp->Fill( var_x_axis  , weight_F2   );
+		    }
+		}
+
       		}
     	}
         auto result = calculateTotalEntriesAndError(X_tmp);
@@ -679,7 +894,7 @@ if(st_vars_data.ptardp > cuts_delta_min_st && st_vars_data.ptardp < cuts_delta_m
 	     && lt_vars_data_Dummy.ptarph > cuts_ph_min_lt    &&  lt_vars_data_Dummy.ptarph < cuts_ph_max_lt   
 	     && lt_vars_data_Dummy.npeSum > cuts_npeSum_lt    
 	     && lt_vars_data_Dummy.ptary  < cuts_ytar_max_lt  && lt_vars_data_Dummy.ptary  > cuts_ytar_min_lt && lt_vars_data_Dummy.ptarx <2.0 
-	     && lt_vars_data_Dummy.AvgCurr >5.0
+	     && lt_vars_data_Dummy.AvgCurr >5.0  && lt_vars_data_Dummy.CurrentFlag ==1
  ){
 	     
 	     double Eprime =  p_spec*(1+0.01*lt_vars_data_Dummy.ptardp);
@@ -692,7 +907,18 @@ if(st_vars_data.ptardp > cuts_delta_min_st && st_vars_data.ptardp < cuts_delta_m
 	     else if (var_dep=="xb"){ var_x_axis = deltaToX( lt_vars_data_Dummy.ptardp , p_spec , Einitial , angle);  }
 	     if (F2_option) {  weight_F2 = weight_calculateF2( thetadeg ,  Eprime ,  Einitial)               ;}	     else { weight_F2 =1.0;}
 	     	     
-	     X_tmp->Fill(var_x_axis, weight_F2);
+
+	     if (shift_collimator_opt =="00"){ X_tmp->Fill( var_x_axis  , weight_F2   ); }
+	     else {  if (abs(166.37*lt_vars_data_Dummy.ptarth) <= (11.645 -shift_collimator) && abs(lt_vars_data_Dummy.ptary + 166.37*lt_vars_data_Dummy.ptarph )<= (4.575 -shift_collimator) &&
+			 (166.37*lt_vars_data_Dummy.ptarth) < (2.545 * (lt_vars_data_Dummy.ptary + 166.37*lt_vars_data_Dummy.ptarph) + (17.4625 - vertical_shift)) &&
+			 (166.37*lt_vars_data_Dummy.ptarth) > ((2.545)*(lt_vars_data_Dummy.ptary + 166.37*lt_vars_data_Dummy.ptarph)  - (17.4625 - vertical_shift)) &&
+			 (166.37*lt_vars_data_Dummy.ptarth) < ((-2.545)*(lt_vars_data_Dummy.ptary + 166.37*lt_vars_data_Dummy.ptarph) + (17.4625 - vertical_shift)) &&
+			 (166.37*lt_vars_data_Dummy.ptarth) > ((-2.545)*(lt_vars_data_Dummy.ptary + 166.37*lt_vars_data_Dummy.ptarph) - (17.4625 - vertical_shift))     )
+		 {
+		   X_tmp->Fill( var_x_axis  , weight_F2   );
+		 }
+	     }
+
 
 	  }
         }
@@ -735,7 +961,7 @@ if(st_vars_data.ptardp > cuts_delta_min_st && st_vars_data.ptardp < cuts_delta_m
              && st_vars_data_tmp.ptarph > cuts_ph_min_st    &&  st_vars_data_tmp.ptarph < cuts_ph_max_st
              && st_vars_data_tmp.npeSum > cuts_npeSum_st
              && st_vars_data_tmp.ptary  < cuts_ytar_max_st  && st_vars_data_tmp.ptary  > cuts_ytar_min_st && st_vars_data_tmp.ptarx <2.0
-             && st_vars_data_tmp.AvgCurr >5.0
+             && st_vars_data_tmp.AvgCurr >5.0  && st_vars_data_tmp.CurrentFlag ==1
 	       ){
 
 	      double Eprime =  p_spec*(1+0.01*st_vars_data_tmp.ptardp);
@@ -750,6 +976,18 @@ if(st_vars_data.ptardp > cuts_delta_min_st && st_vars_data.ptardp < cuts_delta_m
 	      else { weight_F2 =1.0;}
 
 	      X_tmp->Fill(var_x_axis, weight_F2);
+
+
+	      if (shift_collimator_opt =="00"){ X_tmp->Fill( var_x_axis  , weight_F2   ); }
+	      else {  if (abs(166.37*st_vars_data_tmp.ptarth) <= (11.645 -shift_collimator) && abs(st_vars_data_tmp.ptary + 166.37*st_vars_data_tmp.ptarph )<= (4.575 -shift_collimator) &&
+			  (166.37*st_vars_data_tmp.ptarth) < (2.545 * (st_vars_data_tmp.ptary + 166.37*st_vars_data_tmp.ptarph) + (17.4625 - vertical_shift)) &&
+			  (166.37*st_vars_data_tmp.ptarth) > ((2.545)*(st_vars_data_tmp.ptary + 166.37*st_vars_data_tmp.ptarph)  - (17.4625 - vertical_shift)) &&
+			  (166.37*st_vars_data_tmp.ptarth) < ((-2.545)*(st_vars_data_tmp.ptary + 166.37*st_vars_data_tmp.ptarph) + (17.4625 - vertical_shift)) &&
+			  (166.37*st_vars_data_tmp.ptarth) > ((-2.545)*(st_vars_data_tmp.ptary + 166.37*st_vars_data_tmp.ptarph) - (17.4625 - vertical_shift))     )
+		  {
+		    X_tmp->Fill( var_x_axis  , weight_F2   );
+		  }
+	      }
 
 	    }
 	  }
@@ -847,7 +1085,21 @@ if(st_vars_data.ptardp > cuts_delta_min_st && st_vars_data.ptardp < cuts_delta_m
 	  if      (var_dep=="delta")  { var_x_axis = lt_vars_mc.hsdp;  }
 	  else if (var_dep=="xb"   )  { var_x_axis = deltaToX( lt_vars_mc.hsdp , p_spec , Einitial , angle);  }
 	  
-	  if (  lt_vars_mc.hsdp < cuts_delta_max_lt_mc && lt_vars_mc.hsdp > cuts_delta_min_lt_mc     ){	  X_MC_LT->Fill( var_x_axis,weight*weight_F2*weight_ytarCorr*weight_MC_JacobianCorr*weight_delta );   } 
+	  if (  lt_vars_mc.hsdp < cuts_delta_max_lt_mc && lt_vars_mc.hsdp > cuts_delta_min_lt_mc     ){	   
+
+
+	    if (shift_collimator_opt =="00"){ X_MC_LT->Fill( var_x_axis,weight*weight_F2*weight_ytarCorr*weight_MC_JacobianCorr*weight_delta ); }
+	    else {  if (abs(166.37*lt_vars_mc.hpsxptar) <= (11.645 -shift_collimator) && abs(lt_vars_mc.hpsytar + 166.37*lt_vars_mc.hpsyptar )<= (4.575 -shift_collimator) &&
+			(166.37*lt_vars_mc.hpsxptar) < (2.545 * (lt_vars_mc.hpsytar + 166.37*lt_vars_mc.hpsyptar) + (17.4625 - vertical_shift)) &&
+			(166.37*lt_vars_mc.hpsxptar) > ((2.545)*(lt_vars_mc.hpsytar + 166.37*lt_vars_mc.hpsyptar)  - (17.4625 - vertical_shift)) &&
+			(166.37*lt_vars_mc.hpsxptar) < ((-2.545)*(lt_vars_mc.hpsytar + 166.37*lt_vars_mc.hpsyptar) + (17.4625 - vertical_shift)) &&
+			(166.37*lt_vars_mc.hpsxptar) > ((-2.545)*(lt_vars_mc.hpsytar + 166.37*lt_vars_mc.hpsyptar) - (17.4625 - vertical_shift))     )
+		{
+		  X_MC_LT->Fill( var_x_axis,weight*weight_F2*weight_ytarCorr*weight_MC_JacobianCorr*weight_delta );
+		}
+	    }
+
+	  } 
 	  
 	  hsdp_values_LT.push_back(lt_vars_mc.hsdp);
 	  weight_values_LT.push_back(weight);
@@ -906,9 +1158,43 @@ if(st_vars_data.ptardp > cuts_delta_min_st && st_vars_data.ptardp < cuts_delta_m
           double var_x_axis;
           if      (var_dep=="delta")  { var_x_axis = st_vars_mc.hsdp;  }
           else if (var_dep=="xb"   )  { var_x_axis = deltaToX( st_vars_mc.hsdp , p_spec , Einitial , angle);  }
-	  //cout << "MC var_x_axis: " << var_x_axis << endl;
-	  if ( st_vars_mc.hsdp < cuts_delta_max_st_mc && st_vars_mc.hsdp > cuts_delta_min_st_mc  ){X_MC_ST->Fill( var_x_axis , weight*weight_F2*weight_ytarCorr*weight_MC_JacobianCorr*weight_delta );}
 	  
+	  if ( st_vars_mc.hsdp < cuts_delta_max_st_mc && st_vars_mc.hsdp > cuts_delta_min_st_mc  ){
+
+
+
+
+	    //	    X_MC_ST->Fill( var_x_axis , weight*weight_F2*weight_ytarCorr*weight_MC_JacobianCorr*weight_delta );
+
+
+	    if (shift_collimator_opt =="00"){ X_MC_ST->Fill( var_x_axis,weight*weight_F2*weight_ytarCorr*weight_MC_JacobianCorr*weight_delta ); }
+	    else {  if (abs(166.37*st_vars_mc.hpsxptar) <= (11.645 -shift_collimator) && abs(st_vars_mc.hpsytar + 166.37*st_vars_mc.hpsyptar )<= (4.575 -shift_collimator) &&
+			(166.37*st_vars_mc.hpsxptar) < (2.545 * (st_vars_mc.hpsytar + 166.37*st_vars_mc.hpsyptar) + (17.4625 - vertical_shift)) &&
+			(166.37*st_vars_mc.hpsxptar) > ((2.545)*(st_vars_mc.hpsytar + 166.37*st_vars_mc.hpsyptar)  - (17.4625 - vertical_shift)) &&
+			(166.37*st_vars_mc.hpsxptar) < ((-2.545)*(st_vars_mc.hpsytar + 166.37*st_vars_mc.hpsyptar) + (17.4625 - vertical_shift)) &&
+			(166.37*st_vars_mc.hpsxptar) > ((-2.545)*(st_vars_mc.hpsytar + 166.37*st_vars_mc.hpsyptar) - (17.4625 - vertical_shift))     )
+		{
+		  X_MC_ST->Fill( var_x_axis,weight*weight_F2*weight_ytarCorr*weight_MC_JacobianCorr*weight_delta );
+		}
+	    }
+
+
+
+
+
+
+
+	  }
+	  
+
+
+
+
+
+
+
+
+
 	  hsdp_values_ST.push_back(st_vars_mc.hsdp);
 	  weight_values_ST.push_back(weight);
 
@@ -1086,14 +1372,14 @@ if(st_vars_data.ptardp > cuts_delta_min_st && st_vars_data.ptardp < cuts_delta_m
 
 
 int main(int argc, char** argv) {
-  if (argc != 9) {
-    std::cerr << "Usage: " << argv[0] << " <target_input> <angle_input> <momentum_spec_input> <spectrometer> <ytar_corr> <MCJacobian_corr> <delta_corr> <CSB_corr>" << std::endl;
-    std::cerr << "Example: " << argv[0] << " Ca12 20 2p420 HMS ON ON ON ON" << std::endl;
-    std::cerr << "Example of a TEST case: " << argv[0] << " Ca12 20 5p870 test ON ON ON ON" << std::endl;
+  if (argc != 10) {
+    std::cerr << "Usage: " << argv[0] << " <target_input> <angle_input> <momentum_spec_input> <spectrometer> <ytar_corr> <MCJacobian_corr> <delta_corr> <CSB_corr> <Shift_Collimator>" << std::endl;
+    std::cerr << "Example: " << argv[0] << " Ca12 20 2p420 HMS ON ON ON ON 00" << std::endl;
+    std::cerr << "Example of a TEST case: " << argv[0] << " Ca12 20 5p870 test ON ON ON ON 00" << std::endl;
     return 1;
   }
 
-  cross_Sections_updated_workingProcess(argv[1], argv[2], argv[3], argv[4] , argv[5], argv[6], argv[7],argv[8] );
+  cross_Sections_updated_workingProcess(argv[1], argv[2], argv[3], argv[4] , argv[5], argv[6], argv[7],argv[8] , argv[9] );
   return 0;
 }
  
@@ -1262,6 +1548,7 @@ void setBranchAddresses_data(TTree *tree, Variables &vars, TString spectrometer_
     tree->SetBranchStatus("H.cal.etottracknorm", 1);
     tree->SetBranchStatus("H.cer.npeSum", 1);
     tree->SetBranchStatus("H.bcm.bcm4a.AvgCurrent", 1);
+    tree->SetBranchStatus("H.bcm.CurrentFlag", 1);
 
     tree->SetBranchAddress("H.gtr.dp",            &vars.ptardp); 
     tree->SetBranchAddress("H.gtr.th",            &vars.ptarth); 
@@ -1279,6 +1566,7 @@ void setBranchAddresses_data(TTree *tree, Variables &vars, TString spectrometer_
     tree->SetBranchAddress("H.cal.etottracknorm", &vars.decal);
     tree->SetBranchAddress("H.cer.npeSum",        &vars.npeSum);
     tree->SetBranchAddress("H.bcm.bcm4a.AvgCurrent", &vars.AvgCurr);
+    tree->SetBranchAddress("H.bcm.CurrentFlag"     , &vars.CurrentFlag);
   } 
   else if (spectrometer_option == "SHMS") {
     cout<< "TAKING SHMS BRANCHES"<<endl;
@@ -1317,62 +1605,6 @@ void setBranchAddresses_data(TTree *tree, Variables &vars, TString spectrometer_
   }
 }
 
-
-
-
-
-
-/*
-
-
-
-void setBranchAddresses_data(TTree *tree, Variables &vars, TString spectrometer_option) {
-
-if (spectrometer_option=="HMS" || spectrometer_option=="test") {
-//cout<< "TAKING HMS BRANCHES"<<endl;
-  tree->SetBranchAddress("H.gtr.dp",            &vars.ptardp);   //data delta    
-  tree->SetBranchAddress("H.gtr.th",            &vars.ptarth);   //data target theta 
-  tree->SetBranchAddress("H.gtr.ph",            &vars.ptarph);   //data target phi  
-  tree->SetBranchAddress("H.gtr.x",             &vars.ptarx);    //data target x 
-  tree->SetBranchAddress("H.gtr.y",             &vars.ptary);    //data target y  
-  tree->SetBranchAddress("H.dc.x_fp",           &vars.dpsxfp) ;  //data focal plane x  
-  tree->SetBranchAddress("H.dc.y_fp",           &vars.dpsyfp);   //data focal plane y  
-  tree->SetBranchAddress("H.dc.xp_fp",          &vars.dpsxptar); //data focal plane xp   
-  tree->SetBranchAddress("H.dc.yp_fp",          &vars.dpsyptar); //data focal plane yp    
-  tree->SetBranchAddress("H.kin.W",             &vars.dW);       //data W   
-  tree->SetBranchAddress("H.kin.Q2",            &vars.dQ2);      //data Q2  
-  tree->SetBranchAddress("H.kin.nu",            &vars.dnu);      //data omega  
-  tree->SetBranchAddress("H.kin.scat_ang_deg",  &vars.dtheta);   //data theta   
-  tree->SetBranchAddress("H.cal.etottracknorm", &vars.decal);
-  tree->SetBranchAddress("H.cer.npeSum",        &vars.npeSum);
-  tree->SetBranchAddress("H.bcm.bcm4a.AvgCurrent",        &vars.AvgCurr);
-
-}
-
-else if (spectrometer_option=="SHMS"){
-cout<< "TAKING SHMS BRANCHES"<<endl;
-  tree->SetBranchAddress("P.gtr.dp",            &vars.ptardp);   //data delta    
-  tree->SetBranchAddress("P.gtr.th",            &vars.ptarth);   //data target theta 
-  tree->SetBranchAddress("P.gtr.ph",            &vars.ptarph);   //data target phi  
-  tree->SetBranchAddress("P.gtr.x",             &vars.ptarx);    //data target x 
-  tree->SetBranchAddress("P.gtr.y",             &vars.ptary);    //data target y  
-  tree->SetBranchAddress("P.dc.x_fp",           &vars.dpsxfp) ;  //data focal plane x  
-  tree->SetBranchAddress("P.dc.y_fp",           &vars.dpsyfp);   //data focal plane y  
-  tree->SetBranchAddress("P.dc.xp_fp",          &vars.dpsxptar); //data focal plane xp   
-  tree->SetBranchAddress("P.dc.yp_fp",          &vars.dpsyptar); //data focal plane yp    
-  tree->SetBranchAddress("P.kin.W",             &vars.dW);       //data W   
-  tree->SetBranchAddress("P.kin.Q2",            &vars.dQ2);      //data Q2  
-  tree->SetBranchAddress("P.kin.nu",            &vars.dnu);      //data omega  
-  tree->SetBranchAddress("P.kin.scat_ang_deg",  &vars.dtheta);   //data theta   
-  tree->SetBranchAddress("P.cal.etottracknorm", &vars.decal);
-  tree->SetBranchAddress("P.ngcer.npeSum",      &vars.npeSum);
-
-
-
-}
-
-}
-*/
 
 double calculate_mc_scale_factor(int nentries_mc , double p_spec, double density , double length, double AM , double sim_charge , int delta_hi, int delta_lo , TString targType ) {
 
